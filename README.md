@@ -1,2 +1,2 @@
-# cs1666-Team-Rogue_mon
-Repository For a 2021 Pokemon world production
+# cs1666-Team-Monster_town
+Repository For a 2021 monster town production
