@@ -1,0 +1,15 @@
+[package]
+name = "sdl_rust"
+version = "0.1.0"
+authors = ["Nick Farnan <nlf4@pitt.edu>", "Adam Wipprecht <amw290@pitt.edu>", "Zhiyi Zhan <zhz110@pitt.edu>", "Gurmail Mathon <gsm18@pitt.edu>", "Azeez Hakeem <azh15@pitt.edu>", "Burhan Bhatti <bub3@pitt.edu>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies.sdl2]
+version = "0.34"
+default-features = false
+features = ["image"]
+
+[dev-dependencies]
+rand = "0.8.0"
