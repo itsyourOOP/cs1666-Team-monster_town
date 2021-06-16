@@ -19,9 +19,9 @@ const TEAM: &[&str; 6] = &["Title", "Adam", "Azeez", "Burhan", "Gurmail", "Zhiyi
 const BGS: &[Color; 6] = &[	Color::BLACK,
 							Color::RGB(0x91, 0xD5, 0xFF), // Adam
 							Color::MAGENTA, // Azeez
-							Color::GREEN, // Burhan
-							Color::RED, // Gurmail
-							Color::YELLOW ]; // Zhiyi
+							Color::BLUE, // Burhan
+							Color::YELLOW, // Gurmail
+							Color::RED ]; // Zhiyi
 
 pub struct SDL04 {
 	core: SDLCore,
