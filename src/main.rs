@@ -34,7 +34,7 @@ impl Demo for SDL10 {
 	fn run(&mut self) -> Result<(), String> {
 		let texture_creator = self.core.wincan.texture_creator();
 
-		let bird_sheet = texture_creator.load_texture("images/tree.png")?;
+		let bird_sheet = texture_creator.load_texture("images/Zhiyi.png")?;
 		let brick_sheet = texture_creator.load_texture("images/tree.png")?;
 
 		let mut rng = thread_rng();
@@ -75,7 +75,7 @@ impl Demo for SDL10 {
 			for (i, b) in (0..).zip(bird_locations.iter()) {
 				let src = Rect::new(
 					(i % 2) * (TILE_SIZE as i32),
-					((i % 4)) * (TILE_SIZE as i32),
+					((i % 4)/2) * (TILE_SIZE as i32),
 					TILE_SIZE,
 					TILE_SIZE,
 				);
