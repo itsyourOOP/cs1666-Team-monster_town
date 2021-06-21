@@ -1,77 +1,95 @@
 extern crate sdl_rust;
+extern crate rand;
+
+use rand::thread_rng;
+use rand::Rng;
 
 use sdl2::pixels::Color;
+use sdl2::event::Event;
 use sdl2::rect::Rect;
+use sdl2::keyboard::Keycode;
+use sdl2::image::LoadTexture;
+use sdl2::render::Texture;
 
 use sdl_rust::SDLCore;
 use sdl_rust::Demo;
 
-use std::time::Duration;
-use std::thread;
-use sdl2::image::LoadTexture;
+const TITLE: &str = "SDL10 Tiling";
 
-const TITLE: &str = "Monster Town Credits Demo";
 const CAM_W: u32 = 1280;
 const CAM_H: u32 = 720;
-const TIMEOUT: u64 = 5000;
 
-const TEAM: &[&str; 6] = &["Title", "Adam", "Azeez", "Burhan", "Gurmail", "Zhiyi"];
-const BGS: &[Color; 6] = &[	Color::BLACK,
-							Color::RGB(0x91, 0xD5, 0xFF), // Adam
-							Color::MAGENTA, // Azeez
-							Color::GREEN, // Burhan
-							Color::RED, // Gurmail
-							Color::YELLOW ]; // Zhiyi
+const TILE_SIZE: u32 = 64;
 
-pub struct SDL04 {
+pub struct SDL10 {
 	core: SDLCore,
 }
 
-impl Demo for SDL04 {
+impl Demo for SDL10 {
 	fn init() -> Result<Self, String> {
 		let core = SDLCore::init(TITLE, true, CAM_W, CAM_H)?;
-		Ok(SDL04{ core })
+		Ok(SDL10{ core })
 	}
 
 	fn run(&mut self) -> Result<(), String> {
 		let texture_creator = self.core.wincan.texture_creator();
 
-		let mut i = 0;
-		while i < TEAM.len() {
-			let member = TEAM[i];
+		let bird_sheet = texture_creator.load_texture("images/tree.png")?;
+		let brick_sheet = texture_creator.load_texture("images/tree.png")?;
 
-			// Set the background color specified by each member
-			let bg_color = BGS[i];
-			self.core.wincan.set_draw_color(bg_color);
-		
-			// Use the image with their name
-			let image_path = format!("images/{}.png", member);
-			let monster_image = texture_creator.load_texture(image_path)?;
-			
-			// Get the image dimensions for use in centering it in the display window
-			let w = monster_image.query().width;
-			let h = monster_image.query().height;
+		let mut rng = thread_rng();
+		let bird_locations: Vec<_> = (0..8)
+			.map(|i| {
+				Rect::new(
+					rng.gen_range(0..((CAM_W-TILE_SIZE) as i32)),
+					rng.gen_range(0..((CAM_H-(2*TILE_SIZE)) as i32)),
+					TILE_SIZE,
+					TILE_SIZE,
+				)
+			})
+			.collect();
 
-			// Have the image take up the entire height, and be centered horizontally (it will crash for wide images)
-			let rect = Rect::new(((CAM_W/2) - (CAM_H * w / h)/2) as i32, 0, CAM_H * w / h, CAM_H);
+		'gameloop: loop {
+			for event in self.core.event_pump.poll_iter() {
+				match event {
+					Event::Quit{..} | Event::KeyDown{keycode: Some(Keycode::Escape), ..} => break 'gameloop,
+					_ => {},
+				}
+			}
 
-			// Clear the previous image and set the background color
+			self.core.wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
 			self.core.wincan.clear();
 
-			// Add the image to the window (within the specified rectangle)
-			self.core.wincan.copy(&monster_image, None, rect)?;
+			// Draw bricks
+			let mut i = 0;
+			while i * TILE_SIZE < CAM_W {
+				let src = Rect::new(( (i % 2) * TILE_SIZE) as i32, 0, TILE_SIZE, TILE_SIZE);
+				let pos = Rect::new((i * TILE_SIZE) as i32, (CAM_H - TILE_SIZE) as i32, TILE_SIZE, TILE_SIZE);
+
+				self.core.wincan.copy(&brick_sheet, src, pos)?;
+
+				i += 1;
+			}
+
+			// Draw birds
+			for (i, b) in (0..).zip(bird_locations.iter()) {
+				let src = Rect::new(
+					(i % 2) * (TILE_SIZE as i32),
+					((i % 4)) * (TILE_SIZE as i32),
+					TILE_SIZE,
+					TILE_SIZE,
+				);
+				self.core.wincan.copy(&bird_sheet, src, b.clone())?;
+			}
 
 			self.core.wincan.present();
-
-			// Wait for the TIMEOUT (5 seconds), then show the next image
-			thread::sleep(Duration::from_millis(TIMEOUT));
-
-			i += 1;
 		}
+
+		// Out of game loop, return Ok
 		Ok(())
 	}
 }
 
 fn main() {
-	sdl_rust::runner(TITLE, SDL04::init);
+	sdl_rust::runner(TITLE, SDL10::init);
 }
