@@ -13,15 +13,11 @@ use sdl2::render::Texture;
 
 const TITLE: &str = "Monster Town Week 2";
 
-
+const SCALE_UP: i16 = 3;
 
 const CAM_W: u32 = 1280;
 const CAM_H: u32 = 720;
 
-const TILE_SIZE: u32 = 16;
-
-fn main() {
-=======
 const HELP_WHERE_DOES_THIS_COME_FROM: i32 = 2086;
 
 const SPEED: i8 = 5;
@@ -166,5 +162,4 @@ impl Demo for SDL04 {
 
 fn main() {
 	sdl_rust::runner(TITLE, SDL04::init);
-
 }
