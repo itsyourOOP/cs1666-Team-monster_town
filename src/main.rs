@@ -77,7 +77,7 @@ impl Demo for SDL04 {
 				TILE_SIZE * SCALE_UP as u32,
 				TILE_SIZE * SCALE_UP as u32,
 			),
-			texture_creator.load_texture("images/Block.png")?,
+			texture_creator.load_texture("images/Character.png")?,
 		);
 
 		'gameloop: loop {
