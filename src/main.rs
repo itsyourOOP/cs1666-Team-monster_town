@@ -14,12 +14,12 @@ use sdl2::render::Texture;
 use sdl_rust::SDLCore;
 use sdl_rust::Demo;
 
-const TITLE: &str = "SDL10 Tiling";
+const TITLE: &str = "Map with woods and grass";
 
 const CAM_W: u32 = 1280;
 const CAM_H: u32 = 720;
 
-const TILE_SIZE: u32 = 64;
+const TILE_SIZE: u32 = 16;
 
 pub struct SDL10 {
 	core: SDLCore,
@@ -34,20 +34,8 @@ impl Demo for SDL10 {
 	fn run(&mut self) -> Result<(), String> {
 		let texture_creator = self.core.wincan.texture_creator();
 
-		let bird_sheet = texture_creator.load_texture("images/Zhiyi.png")?;
-		let brick_sheet = texture_creator.load_texture("images/tree.png")?;
-
-		let mut rng = thread_rng();
-		let bird_locations: Vec<_> = (0..8)
-			.map(|i| {
-				Rect::new(
-					rng.gen_range(0..((CAM_W-TILE_SIZE) as i32)),
-					rng.gen_range(0..((CAM_H-(2*TILE_SIZE)) as i32)),
-					TILE_SIZE,
-					TILE_SIZE,
-				)
-			})
-			.collect();
+		let tree_sheet = texture_creator.load_texture("images/tree.png")?;
+		let grass_sheet = texture_creator.load_texture("images/grass patch.png")?;
 
 		'gameloop: loop {
 			for event in self.core.event_pump.poll_iter() {
@@ -60,17 +48,41 @@ impl Demo for SDL10 {
 			self.core.wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
 			self.core.wincan.clear();
 
-			// Draw bricks
+			// Draw bottom trees
 			let mut i = 0;
 			while i * TILE_SIZE < CAM_W {
-				let src = Rect::new(( (i % 2) * TILE_SIZE) as i32, 0, TILE_SIZE, TILE_SIZE);
-				let pos = Rect::new((i * TILE_SIZE) as i32, (CAM_H - TILE_SIZE) as i32, TILE_SIZE, TILE_SIZE);
+				let src = Rect::new(( (i % 4)  * TILE_SIZE) as i32, 0, TILE_SIZE, 4 * TILE_SIZE);
+				let pos = Rect::new((i * TILE_SIZE) as i32, (CAM_H - 4 * TILE_SIZE) as i32, TILE_SIZE, 4 * TILE_SIZE);
 
-				self.core.wincan.copy(&brick_sheet, src, pos)?;
+				self.core.wincan.copy(&tree_sheet, src, pos)?;
 
 				i += 1;
 			}
 
+<<<<<<< HEAD
+			// Draw upper trees
+			let mut i = 0;
+			while i * TILE_SIZE < CAM_W {
+				let src = Rect::new(( (i % 4)  * TILE_SIZE) as i32, 0, TILE_SIZE, 4 * TILE_SIZE);
+				let pos = Rect::new((i * TILE_SIZE) as i32, 0 , TILE_SIZE, 4 * TILE_SIZE);
+
+				self.core.wincan.copy(&tree_sheet, src, pos)?;
+
+				i += 1;
+			}
+
+			// Draw grass patches
+			let mut i = 5;
+			while i * TILE_SIZE < 320 {
+				let src = Rect::new( (i * TILE_SIZE) as i32, 0, TILE_SIZE, TILE_SIZE);
+				let pos_1 = Rect::new((i * TILE_SIZE) as i32 , 320 , TILE_SIZE, TILE_SIZE);
+				//let pos_2 = Rect::new((i * TILE_SIZE) as i32, 320 + 16, TILE_SIZE, TILE_SIZE);
+
+				self.core.wincan.copy(&grass_sheet, src, pos_1)?;
+				//self.core.wincan.copy(&grass_sheet, src, pos_2)?;
+				
+				i += 1;
+=======
 			// Draw birds
 			for (i, b) in (0..).zip(bird_locations.iter()) {
 				let src = Rect::new(
@@ -80,6 +92,7 @@ impl Demo for SDL10 {
 					TILE_SIZE,
 				);
 				self.core.wincan.copy(&bird_sheet, src, b.clone())?;
+>>>>>>> bfef4e1be03bd06d59d8fe34ad32477cbd95b21a
 			}
 
 			self.core.wincan.present();
