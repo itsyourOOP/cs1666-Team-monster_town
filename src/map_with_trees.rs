@@ -35,7 +35,8 @@ impl Demo for SDL10 {
 		let texture_creator = self.core.wincan.texture_creator();
 
 		let tree_sheet = texture_creator.load_texture("images/tree.png")?;
-		let grass_sheet = texture_creator.load_texture("images/grass patch.png")?;
+		let grass_sheet = texture_creator.load_texture("images/grass_patch_32.png")?;
+		let water_sheet = texture_creator.load_texture("images/water_patch_32.png")?;
 
 		'gameloop: loop {
 			for event in self.core.event_pump.poll_iter() {
@@ -71,17 +72,38 @@ impl Demo for SDL10 {
 			}
 
 			// Draw grass patches
-			let mut i = 5;
-			while i * TILE_SIZE < 720 {
-				let src = Rect::new( (i * TILE_SIZE) as i32, 0, TILE_SIZE, TILE_SIZE);
-				let pos_1 = Rect::new((i * TILE_SIZE) as i32 , 320 , TILE_SIZE, TILE_SIZE);
-				//let pos_2 = Rect::new((i * TILE_SIZE) as i32, 320 + 16, TILE_SIZE, TILE_SIZE);
+			let mut i = 6;
+			while i * TILE_SIZE < 320{
+				let src = Rect::new( ((i % 2)  * TILE_SIZE) as i32 , 0,  TILE_SIZE, 2 * TILE_SIZE);
+				let pos_1 = Rect::new((i * TILE_SIZE) as i32 , 96 ,  TILE_SIZE, 2 * TILE_SIZE);
+				let pos_2 = Rect::new((i * TILE_SIZE) as i32, 128, TILE_SIZE, 2 * TILE_SIZE);
+				let pos_3 = Rect::new((i * TILE_SIZE) as i32, 160, TILE_SIZE, 2 * TILE_SIZE);
+				let pos_4 = Rect::new((i * TILE_SIZE) as i32, 192, TILE_SIZE, 2 * TILE_SIZE);
 
 				self.core.wincan.copy(&grass_sheet, src, pos_1)?;
-				//self.core.wincan.copy(&grass_sheet, src, pos_2)?;
-				
+				self.core.wincan.copy(&grass_sheet, src, pos_2)?;
+				self.core.wincan.copy(&grass_sheet, src, pos_3)?;
+				self.core.wincan.copy(&grass_sheet, src, pos_4)?;
+
 				i += 1;
 		
+			}
+
+			// Draw a pond
+			let mut i = 58;
+			while i * TILE_SIZE < 1184 {
+				let src = Rect::new( ((i % 2)  * TILE_SIZE) as i32 , 0,  TILE_SIZE, 2 * TILE_SIZE);
+				let pos_1 = Rect::new((i * TILE_SIZE) as i32 , 480 ,  TILE_SIZE, 2 * TILE_SIZE);
+				let pos_2 = Rect::new((i * TILE_SIZE) as i32, 514, TILE_SIZE, 2 * TILE_SIZE);
+				let pos_3 = Rect::new((i * TILE_SIZE) as i32, 546, TILE_SIZE, 2 * TILE_SIZE);
+				let pos_4 = Rect::new((i * TILE_SIZE) as i32, 578, TILE_SIZE, 2 * TILE_SIZE);
+
+				self.core.wincan.copy(&water_sheet, src, pos_1)?;
+				self.core.wincan.copy(&water_sheet, src, pos_2)?;
+				self.core.wincan.copy(&water_sheet, src, pos_3)?;
+				self.core.wincan.copy(&water_sheet, src, pos_4)?;
+				
+				i += 1; 
 			}
 
 			self.core.wincan.present();
