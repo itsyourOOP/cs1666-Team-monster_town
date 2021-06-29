@@ -29,7 +29,7 @@ const ACCEL_RATE: i32 = 1;
 
 // Im not sure what these are used for
 const SCALE_UP: i16 = 3;
-const HELP_WHERE_DOES_THIS_COME_FROM: i32 = 2086;
+const HELP_WHERE_DOES_THIS_COME_FROM: i32 = 1250;
 
 pub struct SDL04 {
   core: SDLCore,
@@ -75,7 +75,7 @@ impl Demo for SDL04 {
     let grass_sheet = texture_creator.load_texture("images/grass_patch_32.png")?;
     let water_sheet = texture_creator.load_texture("images/water_patch_32.png")?;
     let gym = texture_creator.load_texture("images/GymV6.png")?;
-
+    let second_gym = texture_creator.load_texture("images/GymV7.png")?;
     // Player Creation from mod player.rs
     let mut p = Player::create(
       Rect::new(
@@ -150,8 +150,8 @@ impl Demo for SDL04 {
       }
 
       // Draw a pond
-      let mut i = 58;
-      while i * TILE_SIZE < 1184 {
+      let mut i = 48;
+      while i * TILE_SIZE < 1060 {
         let src = Rect::new(((i % 2) * TILE_SIZE) as i32, 0, TILE_SIZE, 2 * TILE_SIZE);
         let pos_1 = Rect::new((i * TILE_SIZE) as i32, 480, TILE_SIZE, 2 * TILE_SIZE);
         let pos_2 = Rect::new((i * TILE_SIZE) as i32, 514, TILE_SIZE, 2 * TILE_SIZE);
@@ -166,12 +166,13 @@ impl Demo for SDL04 {
         i += 1;
       }
 
-      //self.core.wincan.present();
-
       // Create the Town Gym
       let gym_box = Rect::new(340, 90, 150, 150);
       self.core.wincan.copy(&gym, None, gym_box)?;
-      //self.core.wincan.present();
+      // Create Second Town Gym
+
+      let second_gym_box = Rect::new(1110, 450, 150, 150);
+      self.core.wincan.copy(&second_gym, None, second_gym_box)?;
 
       let mut movement_direction;
       let mut speed_update;
@@ -223,15 +224,25 @@ impl Demo for SDL04 {
         x_limits,
         (
           0,
-          ((BG_H + (SCALE_UP * TILE_SIZE as i16) as u32) * (SCALE_UP as u32) / 2) as i32,
+          // ((BG_H + (SCALE_UP * TILE_SIZE as i16) as u32) * (SCALE_UP as u32) / 2) as i32,
+          700,
         ),
       );
 
+      // Collision Check With First Gym
       let mut player_box = Rect::new(p.x(), p.y(), p.height(), p.width());
       if check_collision(&player_box, &gym_box) {
         p.set_x(p.x() - speed_update.0);
       }
       if check_collision(&player_box, &gym_box) {
+        p.set_y(p.y() - speed_update.1);
+      }
+
+      // Collision Check with Second Gym
+      if check_collision(&player_box, &second_gym_box) {
+        p.set_x(p.x() - speed_update.0);
+      }
+      if check_collision(&player_box, &second_gym_box) {
         p.set_y(p.y() - speed_update.1);
       }
 
@@ -247,8 +258,10 @@ impl Demo for SDL04 {
 
       // Convert player's map position to be camera-relative
       let player_cam_pos = Rect::new(
-        p.x() - cur_bg.x(),
-        p.y() - cur_bg.y(),
+        // p.x() - cur_bg.x(),
+        // p.y() - cur_bg.y(),
+        p.x(),
+        p.y(),
         TILE_SIZE * SCALE_UP as u32,
         TILE_SIZE * SCALE_UP as u32,
       );
