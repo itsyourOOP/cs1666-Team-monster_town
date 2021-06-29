@@ -74,7 +74,7 @@ impl Demo for SDL04 {
     let tree_sheet = texture_creator.load_texture("images/tree.png")?;
     let grass_sheet = texture_creator.load_texture("images/grass_patch_32.png")?;
     let water_sheet = texture_creator.load_texture("images/water_patch_32.png")?;
-    let gym = texture_creator.load_texture("images/gymA.png")?;
+    let gym = texture_creator.load_texture("images/GymV6.png")?;
 
     // Player Creation from mod player.rs
     let mut p = Player::create(
@@ -166,12 +166,12 @@ impl Demo for SDL04 {
         i += 1;
       }
 
-      self.core.wincan.present();
+      //self.core.wincan.present();
 
       // Create the Town Gym
-      let gym_box = Rect::new(300, 100, 150, 150);
+      let gym_box = Rect::new(340, 90, 150, 150);
       self.core.wincan.copy(&gym, None, gym_box)?;
-      self.core.wincan.present();
+      //self.core.wincan.present();
 
       let mut movement_direction;
       let mut speed_update;
@@ -197,7 +197,7 @@ impl Demo for SDL04 {
         movement_direction = 0;
       }
 
-      self.core.wincan.clear();
+      //self.core.wincan.clear();
 
       let x_limits = (0, HELP_WHERE_DOES_THIS_COME_FROM as i32);
 
