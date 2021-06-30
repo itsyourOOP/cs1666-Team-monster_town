@@ -118,11 +118,6 @@ fn run(
     .map(|x| x.to_string())
     .collect::<Vec<String>>();
 
-  let q1 = texture_creator.load_texture("images/GymV1.png")?;
-  let q2 = texture_creator.load_texture("images/GymV2.png")?;
-
-  let test = vec![q1, q2];
-
   let (attacks, effects) = battle::create_attack_tuples(&texture_creator, &font, &player_moves, &player_e)?;
 
   let player_mon = &player_monster.to_string();
@@ -142,8 +137,6 @@ fn run(
     player_texture: &player_texture,
     enemy_texture: &enemy_texture,
     font: &font,
-    player_moves: &player_moves,
-    test: &test,
     player_attacks: &attacks,
     player_attack_effects: &effects,
     player_health: player_health,

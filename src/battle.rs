@@ -136,8 +136,6 @@ pub struct Battle<'a> {
     pub player_texture: &'a sdl2::render::Texture<'a>,
     pub enemy_texture: &'a sdl2::render::Texture<'a>,
     pub font: &'a sdl2::ttf::Font<'a, 'a>,
-    pub player_moves: &'a Vec<String>,
-    pub test: &'a Vec<sdl2::render::Texture<'a>>,
     pub player_attacks: &'a Vec<(sdl2::render::Texture<'a>, Rect)>,
     pub player_attack_effects: &'a Vec<(sdl2::render::Texture<'a>, Rect)>,
     pub player_health: f32,
