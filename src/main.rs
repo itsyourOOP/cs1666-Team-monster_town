@@ -14,22 +14,17 @@ use sdl_rust::Demo;
 use sdl_rust::SDLCore;
 use std::collections::HashSet;
 
-const TITLE: &str = "Monster Town Week 2";
+const TITLE: &str = "Monster Town Week 3";
 const TILE_SIZE: u32 = 16;
 
 // Camera
 const CAM_W: u32 = 1280;
 const CAM_H: u32 = 720;
-//Background
-const BG_W: u32 = 1280;
-const BG_H: u32 = 720;
 
 const MAX_SPEED: i32 = 5;
 const ACCEL_RATE: i32 = 1;
 
-// Im not sure what these are used for
 const SCALE_UP: i16 = 3;
-const HELP_WHERE_DOES_THIS_COME_FROM: i32 = 1250;
 
 pub struct SDL04 {
   core: SDLCore,
@@ -63,10 +58,6 @@ impl Demo for SDL04 {
   }
 
   fn run(&mut self) -> Result<(), String> {
-    let texture_creator = self.core.wincan.texture_creator();
-
-    //Commented old town map. Remove later.
-    //let background_image = texture_creator.load_texture("images/MapHolder.png")?;
 
     // Texture
     let texture_creator = self.core.wincan.texture_creator();
@@ -74,18 +65,25 @@ impl Demo for SDL04 {
     let tree_sheet = texture_creator.load_texture("images/tree.png")?;
     let grass_sheet = texture_creator.load_texture("images/grass_patch_32.png")?;
     let water_sheet = texture_creator.load_texture("images/water_patch_32.png")?;
-    let gym = texture_creator.load_texture("images/GymV6.png")?;
-    let second_gym = texture_creator.load_texture("images/GymV7.png")?;
+    let gym_1 = texture_creator.load_texture("images/GymV6.png")?;
+    let gym_2 = texture_creator.load_texture("images/GymV7.png")?;
+
+    let mut x_vel = 0;
+    let mut y_vel = 0;
+
     // Player Creation from mod player.rs
-    let mut p = Player::create(
+    // it has a start position
+    let mut player = Player::create(
       Rect::new(
-        0,
-        0,
-        TILE_SIZE * SCALE_UP as u32,
-        TILE_SIZE * SCALE_UP as u32,
+        64,
+        64,
+        TILE_SIZE * 2 as u32,
+        TILE_SIZE * 2 as u32,
       ),
-      texture_creator.load_texture("images/Character.png")?,
+      texture_creator.load_texture("images/walk1_32.png")?,
     );
+
+	let mut player_box = Rect::new(player.x(), player.y(), player.height(), player.width());
 
     'gameloop: loop {
       for event in self.core.event_pump.poll_iter() {
@@ -167,15 +165,15 @@ impl Demo for SDL04 {
       }
 
       // Create the Town Gym
-      let gym_box = Rect::new(340, 90, 150, 150);
-      self.core.wincan.copy(&gym, None, gym_box)?;
+      let gym_1_box = Rect::new(340, 90, 150, 150);
+      self.core.wincan.copy(&gym_1, None, gym_1_box)?;
       // Create Second Town Gym
 
-      let second_gym_box = Rect::new(1110, 450, 150, 150);
-      self.core.wincan.copy(&second_gym, None, second_gym_box)?;
+      let gym_2_box = Rect::new(1110, 450, 150, 150);
+      self.core.wincan.copy(&gym_2, None, gym_2_box)?;
 
-      let mut movement_direction;
-      let mut speed_update;
+      //let mut movement_direction;
+      //let mut speed_update;
 
       // Implement Keystate
       let keystate: HashSet<Keycode> = self
@@ -186,88 +184,58 @@ impl Demo for SDL04 {
         .filter_map(Keycode::from_scancode)
         .collect();
 
-      if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
-        movement_direction = 1;
-      } else if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
-        movement_direction = 2;
-      } else if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
-        movement_direction = 3;
-      } else if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
-        movement_direction = 4;
-      } else {
-        movement_direction = 0;
-      }
+      let mut x_deltav = 0;
+      let mut y_deltav = 0;
+      
+      if keystate.contains(&Keycode::W) {
+            y_deltav -= ACCEL_RATE;
+      } 
+      if keystate.contains(&Keycode::A) {
+            x_deltav -= ACCEL_RATE;
+      } 
+      if keystate.contains(&Keycode::S) {
+            y_deltav += ACCEL_RATE;
+      } 
+      if keystate.contains(&Keycode::D) {
+            x_deltav += ACCEL_RATE;
+      } 
+
+      //Utilize the resist function: slowing it down
+      x_deltav = resist(x_vel, x_deltav);
+      y_deltav = resist(y_vel, y_deltav);
 
       //self.core.wincan.clear();
 
-      let x_limits = (0, HELP_WHERE_DOES_THIS_COME_FROM as i32);
-
-      match movement_direction {
-        1 => {
-          speed_update = (0, -MAX_SPEED as i32);
-        }
-        2 => {
-          speed_update = (-MAX_SPEED as i32, 0);
-        }
-        3 => {
-          speed_update = (0, MAX_SPEED as i32);
-        }
-        4 => {
-          speed_update = (MAX_SPEED as i32, 0);
-        }
-        _ => {
-          speed_update = (0, 0);
-        }
-      }
-      p.update_pos(
-        speed_update,
-        x_limits,
-        (
-          0,
-          // ((BG_H + (SCALE_UP * TILE_SIZE as i16) as u32) * (SCALE_UP as u32) / 2) as i32,
-          700,
-        ),
-      );
-
-      // Collision Check With First Gym
-      let mut player_box = Rect::new(p.x(), p.y(), p.height(), p.width());
-      if check_collision(&player_box, &gym_box) {
-        p.set_x(p.x() - speed_update.0);
-      }
-      if check_collision(&player_box, &gym_box) {
-        p.set_y(p.y() - speed_update.1);
+      // not exceed speed limit
+      x_vel = (x_vel + x_deltav).clamp(-MAX_SPEED,MAX_SPEED);
+      y_vel = (y_vel + y_deltav).clamp(-MAX_SPEED,MAX_SPEED);
+     
+      // Try to move horizontally
+      player_box.set_x(player_box.x() + x_vel);
+      // Check for collision between player and gyms as well as cam bounds
+      // Use the "go-back" approach to collision resolution
+      if check_collision(&player_box, &gym_1_box)
+          || check_collision(&player_box, &gym_2_box)
+          || player_box.left() < 0
+          || player_box.right() > CAM_W as i32
+      {
+          player_box.set_x(player_box.x() - x_vel);
       }
 
-      // Collision Check with Second Gym
-      if check_collision(&player_box, &second_gym_box) {
-        p.set_x(p.x() - speed_update.0);
+      // Try to move vertically
+      player_box.set_y(player_box.y() + y_vel);
+      // Check for collision between player and gyms as well as cam bounds(need to consider trees)
+      // Use the "go-back" approach to collision resolution
+      if check_collision(&player_box, &gym_1_box)
+          || check_collision(&player_box, &gym_2_box)
+          || player_box.top() < 32
+          || player_box.bottom() > CAM_H as i32 - 32
+      {
+          player_box.set_y(player_box.y() - y_vel);
       }
-      if check_collision(&player_box, &second_gym_box) {
-        p.set_y(p.y() - speed_update.1);
-      }
-
-      // Determine the current portion of the background to draw
-      let cur_bg = Rect::new(
-        ((p.x() + ((p.width() / 2) as i32)) - ((CAM_W / 2) as i32))
-          .clamp(0, (BG_W - (CAM_W / SCALE_UP as u32)) as i32),
-        ((p.y() + ((p.height() / 2) as i32)) - ((CAM_H / 2) as i32))
-          .clamp(0, (BG_H - (CAM_H / SCALE_UP as u32)) as i32),
-        CAM_W / SCALE_UP as u32,
-        CAM_H / SCALE_UP as u32,
-      );
-
-      // Convert player's map position to be camera-relative
-      let player_cam_pos = Rect::new(
-        // p.x() - cur_bg.x(),
-        // p.y() - cur_bg.y(),
-        p.x(),
-        p.y(),
-        TILE_SIZE * SCALE_UP as u32,
-        TILE_SIZE * SCALE_UP as u32,
-      );
 
       //self.core.wincan.copy(&tree_sheet, cur_bg, None)?;
-      self.core.wincan.copy(p.texture(), None, player_cam_pos)?;
+      self.core.wincan.copy(player.texture(), None, player_box)?;
 
       self.core.wincan.present();
     }
