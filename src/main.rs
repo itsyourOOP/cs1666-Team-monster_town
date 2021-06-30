@@ -15,6 +15,10 @@ use sdl2::rect::Rect;
 use sdl2::render::BlendMode;
 //use sdl2::render::Texture;
 use std::collections::HashSet;
+use std::path::Path;
+
+use std::time::Duration;
+use std::thread;
 
 const TITLE: &str = "Monster Town Week 3";
 const TILE_SIZE: u32 = 16;
@@ -83,14 +87,68 @@ fn run(
 ) -> Result<(), String> {
   wincan.set_blend_mode(BlendMode::Blend);
 
-  let mut loaded_map = Map::Overworld;
-  let mut fade_in = false;
-
+  let mut loaded_map = Map::Battle;
 
   let texture_creator = wincan.texture_creator();
 
   let gym = texture_creator.load_texture("images/GymV6.png")?;
   let second_gym = texture_creator.load_texture("images/GymV7.png")?;
+
+  let battle_bg = texture_creator.load_texture("images/battle_bg.png")?;
+
+  let player_monster = "deer pokemon";
+  let enemy_monster = "Chromacat";
+
+  let pi = format!("images/{}.png", player_monster);
+  let ei = format!("images/{}.png", enemy_monster);
+
+  let player_texture = texture_creator.load_texture(pi)?;
+  let enemy_texture = texture_creator.load_texture(ei)?;
+  let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
+  let font_path = Path::new(r"./fonts/framd.ttf");
+  let font = ttf_context.load_font(font_path, 256)?;
+
+  let player_moves = vec!["a", "b", "c", "d"]
+    .iter()
+    .map(|x| x.to_string())
+    .collect::<Vec<String>>();
+
+  let player_e = vec!["w", "x", "y", "z"]
+    .iter()
+    .map(|x| x.to_string())
+    .collect::<Vec<String>>();
+
+  let q1 = texture_creator.load_texture("images/GymV1.png")?;
+  let q2 = texture_creator.load_texture("images/GymV2.png")?;
+
+  let test = vec![q1, q2];
+
+  let (attacks, effects) = battle::create_attack_tuples(&texture_creator, &font, &player_moves, &player_e)?;
+
+  let player_mon = &player_monster.to_string();
+  let enemy_mon = &enemy_monster.to_string();
+
+  let mut player_health: f32 = 100.0;
+  let mut enemy_health: f32 = 100.0;
+
+  let (player_name_tup, enemy_name_tup) = battle::create_name_tuples(&texture_creator, &font, &player_mon, &enemy_mon)?;
+
+
+
+  let mut battle_init = battle::Battle {
+    player_name: &player_name_tup,
+    enemy_name: &enemy_name_tup,
+    background_texture: &battle_bg,
+    player_texture: &player_texture,
+    enemy_texture: &enemy_texture,
+    font: &font,
+    player_moves: &player_moves,
+    test: &test,
+    player_attacks: &attacks,
+    player_attack_effects: &effects,
+    player_health: player_health,
+    enemy_health: enemy_health,
+  };
 
   let mut current_choice: i32 = 0;
   let mut selection_buffer = 0;
@@ -124,28 +182,6 @@ fn run(
       .pressed_scancodes()
       .filter_map(Keycode::from_scancode)
       .collect();
-
-    // wincan.clear();
-
-    if fade_in {
-      for i in 0..51 {
-               
-        wincan.set_draw_color(Color::GREEN);
-        wincan.clear();
-
-        let k: i32 = (5 + i*5) - 255;
-        let j = k.abs() as u8;
-
-        battle::draw_battle(wincan, current_choice as usize)?;
-        battle::load_monsters(wincan, "Adam", "Chromacat")?;
-        battle::health_bars(wincan, 100 as f32, 100 as f32)?;
-
-        wincan.set_draw_color(Color::RGBA(0, 0, 0, j));
-        wincan.fill_rect(Rect::new(0,0,CAM_W,CAM_H))?;
-        
-        wincan.present();
-      }
-    }
 
     match loaded_map {
       Map::Overworld => {
@@ -214,6 +250,22 @@ fn run(
         let battle_box = Rect::new(835, 565, 32, 32);
         if check_collision(&player_box, &battle_box) {
           loaded_map = Map::Battle;
+
+          //battle::Battle { player_name, enemy_name, player_texture, enemy_texture, font, } =
+          /*
+          battle_init = battle::Battle {
+            player_name: player_monster,
+            enemy_name: enemy_monster,
+            background_texture: &battle_bg,
+            player_texture: &player_texture,
+            enemy_texture: &enemy_texture,
+            font: &font,
+            player_moves: &player_moves,
+            test: &test,
+            player_attacks: &attacks,
+          };
+          */
+
           p.set_x(p.x() - speed_update.0);
           p.set_y(p.y() - speed_update.1);
         }
@@ -231,16 +283,10 @@ fn run(
         wincan.present();
       }
       Map::Battle => {
-
-        let player_monster = "deer pokemon";
-        let enemy_monster = "Chromacat";
-
-        battle::draw_battle(wincan, current_choice as usize)?;
-        battle::load_monsters(wincan, player_monster, enemy_monster)?;
-        battle::health_bars(wincan, 100 as f32, 100 as f32)?;
+        
+        battle::better_draw_battle(wincan, &battle_init, current_choice as usize, None)?;
 
         if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
-          
           if selection_buffer > 0 {
             continue;
           } else {
@@ -253,9 +299,7 @@ fn run(
               current_choice
             };
 
-            battle::draw_battle(wincan, current_choice as usize)?;
-            battle::load_monsters(wincan, player_monster, enemy_monster)?;
-            battle::health_bars(wincan, 100 as f32, 100 as f32)?;
+            battle::better_draw_battle(wincan, &battle_init, current_choice as usize, None)?;
             selection_buffer = BUFFER_FRAMES;
             wincan.present();
           }
@@ -272,20 +316,16 @@ fn run(
             } else {
               current_choice
             };
-            battle::draw_battle(wincan, current_choice as usize)?;
-            battle::load_monsters(wincan, player_monster, enemy_monster)?;
-            battle::health_bars(wincan, 100 as f32, 100 as f32)?;
             selection_buffer = BUFFER_FRAMES;
-            wincan.present();
+            battle::better_draw_battle(wincan, &battle_init, current_choice as usize, None)?;
           }
         }
         if keystate.contains(&Keycode::Return) {
           let f = format!("You selected move #{}!", current_choice + 1);
-          battle::dialogue_box(wincan, &f)?;
-          wincan.present();
+          battle::better_draw_battle(wincan, &battle_init, current_choice as usize, Some(f))?;
         }
         if keystate.contains(&Keycode::E) {
-          let screen = Rect::new(0,0,CAM_W,CAM_H);
+          let screen = Rect::new(0, 0, CAM_W, CAM_H);
           wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
           for _i in 0..50 {
             wincan.fill_rect(screen)?;
@@ -296,11 +336,8 @@ fn run(
         if keystate.contains(&Keycode::K) {
           for i in 0..101 {
             let k: i32 = ((i - 100) as i32).abs();
-            battle::draw_battle(wincan, current_choice as usize)?;
-            battle::health_bars(wincan, 100 as f32, k as f32)?;
-            battle::load_monsters(wincan, player_monster, enemy_monster)?;
-
-            wincan.present();
+            battle_init.set_enemy_health(k as f32);
+            battle::better_draw_battle(wincan, &battle_init, current_choice as usize, None)?;
           }
         }
         if selection_buffer > 0 {
