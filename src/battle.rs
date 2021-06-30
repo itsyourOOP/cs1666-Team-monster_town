@@ -2,10 +2,10 @@
 //use std::thread;
 //use std::collections::HashSet;
 
-use std::path::Path;
+//use std::path::Path;
 
 use sdl2::pixels::Color;
-use sdl2::image::LoadTexture;
+//use sdl2::image::LoadTexture;
 use sdl2::render::TextureQuery;
 
 use std::time::Duration;
@@ -129,24 +129,6 @@ pub fn create_name_tuples<'a, T>(
     Ok( ( (player_texture, player_rect), (enemy_texture, enemy_rect) ) )
 }
 
-pub fn create_attack_textures<'a, T>(texture_creator: &'a sdl2::render::TextureCreator<T>, font: &'a sdl2::ttf::Font) -> Result<Vec<sdl2::render::Texture<'a>>, String> {
-    let player_monster = "deer pokemon";
-    let enemy_monster = "Chromacat";
-    
-    let pi = format!("images/{}.png", player_monster);
-    let ei = format!("images/{}.png", enemy_monster);
-    
-    //let texture_creator = wincan.texture_creator();
-    let t1 = texture_creator.load_texture(pi)?;
-    let t2 = texture_creator.load_texture(ei)?;
-
-    let mut v = Vec::new();
-    v.push(t1);
-    v.push(t2);
-
-    Ok(v)
-}
-
 pub struct Battle<'a> {
     pub player_name: &'a (sdl2::render::Texture<'a>, Rect),
     pub enemy_name: &'a (sdl2::render::Texture<'a>, Rect),
@@ -225,56 +207,6 @@ pub fn better_draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: 
     wincan.present();
 
     Ok(())
-}
-
-pub fn load_monsters(wincan: &mut sdl2::render::WindowCanvas, player_monster: &str, enemy_monster: &str) -> Result<(), String> {
-    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
-    let font_path = Path::new(r".\fonts\framd.ttf");
-    let font = ttf_context.load_font(font_path, 256)?;
-    
-    let pi = format!("images/{}.png", player_monster);
-    let ei = format!("images/{}.png", enemy_monster);
-    
-    let texture_creator = wincan.texture_creator();
-    let t1 = texture_creator.load_texture(pi)?;
-    let t2 = texture_creator.load_texture(ei)?;
-
-    wincan.copy(&t1, None, Rect::new(800,275,200,200))?;
-    wincan.copy_ex(&t2, None, Rect::new(280 as i32,25 as i32,200,200), 0 as f64, None, true, false)?;
-
-    let surface = font
-        .render(&enemy_monster)
-        .blended(Color::BLACK)
-        .map_err(|e| e.to_string())?;
-    let texture = texture_creator
-        .create_texture_from_surface(&surface)
-        .map_err(|e| e.to_string())?;
-
-    let TextureQuery { width, height, .. } = texture.query();
-
-    let text_rect = Rect::new(490, 88, 300, 35);
-    let text_rect = fit(text_rect, width, height);
-
-    wincan.copy(&texture, None, text_rect)?;
-
-    let surface = font
-        .render(&player_monster)
-        .blended(Color::BLACK)
-        .map_err(|e| e.to_string())?;
-    let texture = texture_creator
-        .create_texture_from_surface(&surface)
-        .map_err(|e| e.to_string())?;
-
-    let TextureQuery { width, height, .. } = texture.query();
-
-    let text_rect = Rect::new(500, 379, 300, 35);
-    let text_rect = fit(text_rect, width, height);
-    let text_rect = Rect::new(500 + (290 - text_rect.width() as i32) as i32, text_rect.y(), text_rect.width(), text_rect.height());
-
-    wincan.copy(&texture, None, text_rect)?;
-
-    Ok(())
-
 }
 
 pub fn health_bars(wincan: &mut sdl2::render::WindowCanvas, player_health: f32, enemy_health: f32) -> Result<(), String> {
@@ -371,170 +303,5 @@ fn message_box<'a>(
         wincan.copy(&texture, None, text_rect)?;
         wincan.present();
     }
-    Ok(())
-}
-
-pub fn dialogue_box(wincan: &mut sdl2::render::WindowCanvas, message: &str) -> Result<(), String> {
-    let texture_creator = wincan.texture_creator();
-    
-    let r2 = Rect::new(600, 150, 400, 125);
-    wincan.set_draw_color(Color::WHITE);
-    wincan.fill_rect(r2)?;
-
-    let r2 = Rect::new(605, 155, 390, 115);
-    wincan.set_draw_color(Color::BLACK);
-    wincan.fill_rect(r2)?;
-
-    let r2 = Rect::new(610, 160, 380, 105);
-    wincan.set_draw_color(Color::WHITE);
-    wincan.fill_rect(r2)?;
-    
-    let mut st = format!("");
-
-    let mut line_number = 0;
-
-    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
-    // let font_path = Path::new(r".\fonts\AgencyFB-Bold.ttf");
-    // let font_path = Path::new(r".\fonts\joystix monospace.ttf");
-    let font_path = Path::new(r".\fonts\framd.ttf");
-
-    // Load a font
-    let font = ttf_context.load_font(font_path, 256)?;
-
-    for c in message.chars() {
-        st = format!("{}{}", st, c);
-        
-        let mut surface = font
-            .render(&st)
-            .blended(Color::BLACK)
-            .map_err(|e| e.to_string())?;
-        let mut texture = texture_creator
-            .create_texture_from_surface(&surface)
-            .map_err(|e| e.to_string())?;
-
-        let TextureQuery { width, height, .. } = texture.query();
-
-        // println!("{}", width);
-
-        if width as f32/height as f32 > 375 as f32/30 as f32 {
-            line_number += 1;
-            st = format!("{}",c);
-            surface = font
-                .render(&st)
-                .blended(Color::BLACK)
-                .map_err(|e| e.to_string())?;
-            texture = texture_creator
-                .create_texture_from_surface(&surface)
-                .map_err(|e| e.to_string())?;
-        }
-
-        let TextureQuery { width, height, .. } = texture.query();
-        
-
-        let text_rect = Rect::new(612, 162 + (line_number * 35), 375, 30);
-        let text_rect = fit(text_rect, width, height);
-        // let text_rect = Rect::new(500 + (290 - text_rect.width() as i32) as i32, text_rect.y(), text_rect.width(), text_rect.height());
-        wincan.copy(&texture, None, text_rect)?;
-        wincan.present();
-    }
-
-    Ok(())
-}
-
-pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, choice: usize) -> Result<(), String> {
-    let texture_creator = wincan.texture_creator();
-
-    wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
-    wincan.clear();
-
-    let bg = texture_creator.load_texture("images/battle_bg.png")?;
-    wincan.copy(&bg, None, Rect::new(0,0,CAM_W,CAM_H))?;
-
-    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
-    // let font_path = Path::new(r".\fonts\AgencyFB-Bold.ttf");
-    // let font_path = Path::new(r".\fonts\joystix monospace.ttf");
-    let font_path = Path::new(r".\fonts\framd.ttf");
-
-    // Load a font
-    let font = ttf_context.load_font(font_path, 256)?;
-    // font.set_style(sdl2::ttf::FontStyle::BOLD);
-
-    let rs: Vec<_> = (0..4)
-        .map(|i| 180 + i * (200 + 40))
-        .map(|i| Rect::new(i, 560 as i32, 200, 100))
-        .collect();
-
-    let outline_size = 5;
-    let r = rs[choice];
-    let r2 = Rect::new(r.x() - outline_size, r.y() - outline_size, (r.width() + (2*outline_size)as u32) as u32, (r.height() + (2*outline_size)as u32) as u32);
-
-    wincan.set_draw_color(Color::RGB(0xf6, 0x52, 0x41));
-    wincan.fill_rect(r2)?;
-
-    for (index, item) in rs.into_iter().enumerate()  {
-        let r = item;
-        wincan.set_draw_color(Color::RGB(0x20, 0x41, 0x6a));
-        wincan.fill_rect(r)?;
-
-        let s = format!("Attack {}", index+1);
-        let surface = font
-            .render(&s)
-            .blended(Color::RGB(0xbd, 0xcd, 0xde))
-            .map_err(|e| e.to_string())?;
-        let texture = texture_creator
-            .create_texture_from_surface(&surface)
-            .map_err(|e| e.to_string())?;
-
-        let TextureQuery { width, height, .. } = texture.query();
-        
-        let text_rect = Rect::new(r.x() + 10, r.y() + 5, 180, 50);
-        let text_rect = center(fit(text_rect, width, height), 180, 50);
-
-        wincan.copy(&texture, None, text_rect)?;
-
-        let s = format!("Effects for {}", index+1);
-        let surface = font
-            .render(&s)
-            .blended(Color::RGB(0xbd, 0xcd, 0xde))
-            .map_err(|e| e.to_string())?;
-        let texture = texture_creator
-            .create_texture_from_surface(&surface)
-            .map_err(|e| e.to_string())?;
-
-        let TextureQuery { width, height, .. } = texture.query();
-
-        let text_rect = Rect::new(r.x() + 10, r.y() + 65, 180, 30);
-            
-        let text_rect = center(fit(text_rect, width, height), 180, 30);
-
-        wincan.copy(&texture, None, text_rect)?;
-
-        
-
-		
-    }
-
-    
-    // FOR DEMO ONLY
-
-    let s = vec!["Demo Instructions:","Use AD/←→ to choose a move","Use Enter to submit your choice", "Use K to kill the other monster", "Use E to exit the battle"];
-    
-    for (index, item) in s.iter().enumerate() {
-        let surface = font
-            .render(&item)
-            .blended(Color::BLACK)
-            .map_err(|e| e.to_string())?;
-        let texture = texture_creator
-            .create_texture_from_surface(&surface)
-            .map_err(|e| e.to_string())?;
-
-        let TextureQuery { width, height, .. } = texture.query();
-
-        let text_rect = Rect::new(25, 300 + (20*index) as i32, width, 20);
-        let text_rect = fit(text_rect, width, height);
-        wincan.copy(&texture, None, text_rect)?;
-    }
-
-
     Ok(())
 }

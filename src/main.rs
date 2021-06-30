@@ -17,8 +17,8 @@ use sdl2::render::BlendMode;
 use std::collections::HashSet;
 use std::path::Path;
 
-use std::time::Duration;
-use std::thread;
+//use std::time::Duration;
+//use std::thread;
 
 const TITLE: &str = "Monster Town Week 3";
 const TILE_SIZE: u32 = 16;
@@ -128,8 +128,8 @@ fn run(
   let player_mon = &player_monster.to_string();
   let enemy_mon = &enemy_monster.to_string();
 
-  let mut player_health: f32 = 100.0;
-  let mut enemy_health: f32 = 100.0;
+  let player_health: f32 = 100.0;
+  let enemy_health: f32 = 100.0;
 
   let (player_name_tup, enemy_name_tup) = battle::create_name_tuples(&texture_creator, &font, &player_mon, &enemy_mon)?;
 
@@ -337,6 +337,7 @@ fn run(
           for i in 0..101 {
             let k: i32 = ((i - 100) as i32).abs();
             battle_init.set_enemy_health(k as f32);
+            battle_init.set_player_health(100.0);
             battle::better_draw_battle(wincan, &battle_init, current_choice as usize, None)?;
           }
         }
