@@ -187,16 +187,16 @@ impl Demo for SDL04 {
       let mut x_deltav = 0;
       let mut y_deltav = 0;
       
-      if keystate.contains(&Keycode::W) {
+      if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
             y_deltav -= ACCEL_RATE;
       } 
-      if keystate.contains(&Keycode::A) {
+      if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left){
             x_deltav -= ACCEL_RATE;
       } 
-      if keystate.contains(&Keycode::S) {
+      if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down){
             y_deltav += ACCEL_RATE;
       } 
-      if keystate.contains(&Keycode::D) {
+      if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right){
             x_deltav += ACCEL_RATE;
       } 
 
