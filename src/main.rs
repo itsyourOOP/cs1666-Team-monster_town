@@ -58,15 +58,19 @@ impl Demo for SDL04 {
   }
 
   fn run(&mut self) -> Result<(), String> {
-
     // Texture
     let texture_creator = self.core.wincan.texture_creator();
 
     let tree_sheet = texture_creator.load_texture("images/tree.png")?;
     let grass_sheet = texture_creator.load_texture("images/grass_patch_32.png")?;
     let water_sheet = texture_creator.load_texture("images/water_patch_32.png")?;
+    let rock_sheet = texture_creator.load_texture("images/rock_patch.png")?;
     let gym_1 = texture_creator.load_texture("images/GymV6.png")?;
     let gym_2 = texture_creator.load_texture("images/GymV7.png")?;
+    let gym_3 = texture_creator.load_texture("images/GymV3.png")?;
+    let gym_4 = texture_creator.load_texture("images/GymV2.png")?;
+    let hospital = texture_creator.load_texture("images/center.png")?;
+    let home = texture_creator.load_texture("images/home.png")?;
 
     let mut x_vel = 0;
     let mut y_vel = 0;
@@ -74,16 +78,11 @@ impl Demo for SDL04 {
     // Player Creation from mod player.rs
     // it has a start position
     let mut player = Player::create(
-      Rect::new(
-        64,
-        64,
-        TILE_SIZE * 2 as u32,
-        TILE_SIZE * 2 as u32,
-      ),
+      Rect::new(64, 64, TILE_SIZE * 2 as u32, TILE_SIZE * 2 as u32),
       texture_creator.load_texture("images/walk1_32.png")?,
     );
 
-	let mut player_box = Rect::new(player.x(), player.y(), player.height(), player.width());
+    let mut player_box = Rect::new(player.x(), player.y(), player.height(), player.width());
 
     'gameloop: loop {
       for event in self.core.event_pump.poll_iter() {
@@ -164,13 +163,47 @@ impl Demo for SDL04 {
         i += 1;
       }
 
-      // Create the Town Gym
-      let gym_1_box = Rect::new(340, 90, 150, 150);
-      self.core.wincan.copy(&gym_1, None, gym_1_box)?;
-      // Create Second Town Gym
+      // Draw rock patch
+      let mut i = 60;
+      while i * TILE_SIZE < 1240 {
+        let src = Rect::new(((i % 2) * TILE_SIZE) as i32, 0, TILE_SIZE, 2 * TILE_SIZE);
+        let pos_1 = Rect::new((i * TILE_SIZE) as i32, 66, TILE_SIZE, 2 * TILE_SIZE);
+        let pos_2 = Rect::new((i * TILE_SIZE) as i32, 98, TILE_SIZE, 2 * TILE_SIZE);
+        let pos_3 = Rect::new((i * TILE_SIZE) as i32, 130, TILE_SIZE, 2 * TILE_SIZE);
+        let pos_4 = Rect::new((i * TILE_SIZE) as i32, 162, TILE_SIZE, 2 * TILE_SIZE);
+        let pos_5 = Rect::new((i * TILE_SIZE) as i32, 194, TILE_SIZE, 2 * TILE_SIZE);
 
+        self.core.wincan.copy(&rock_sheet, src, pos_1)?;
+        self.core.wincan.copy(&rock_sheet, src, pos_2)?;
+        self.core.wincan.copy(&rock_sheet, src, pos_3)?;
+        self.core.wincan.copy(&rock_sheet, src, pos_4)?;
+        self.core.wincan.copy(&rock_sheet, src, pos_5)?;
+        i += 1;
+      }
+
+      // Create the Town Gym
+      let gym_1_box = Rect::new(340, 100, 150, 150);
+      self.core.wincan.copy(&gym_1, None, gym_1_box)?;
+
+      // Create Second Town Gym
       let gym_2_box = Rect::new(1110, 450, 150, 150);
       self.core.wincan.copy(&gym_2, None, gym_2_box)?;
+
+      // Create Third Town Gym
+      let gym_3_box = Rect::new(810, 250, 150, 150);
+      self.core.wincan.copy(&gym_3, None, gym_3_box)?;
+
+      // Create Fourth Town Gym
+      let gym_4_box = Rect::new(300, 450, 150, 150);
+      self.core.wincan.copy(&gym_4, None, gym_4_box)?;
+
+      //Create Hospital
+      let hospital_box = Rect::new(50, 450, 150, 150);
+      self.core.wincan.copy(&hospital, None, hospital_box)?;
+
+      // Create Home Entity
+      let home_box = Rect::new(610, 250, 150, 140);
+      self.core.wincan.copy(&home, None, home_box)?;
 
       //let mut movement_direction;
       //let mut speed_update;
@@ -186,19 +219,18 @@ impl Demo for SDL04 {
 
       let mut x_deltav = 0;
       let mut y_deltav = 0;
-      
       if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
-            y_deltav -= ACCEL_RATE;
-      } 
-      if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left){
-            x_deltav -= ACCEL_RATE;
-      } 
-      if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down){
-            y_deltav += ACCEL_RATE;
-      } 
-      if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right){
-            x_deltav += ACCEL_RATE;
-      } 
+        y_deltav -= ACCEL_RATE;
+      }
+      if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
+        x_deltav -= ACCEL_RATE;
+      }
+      if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
+        y_deltav += ACCEL_RATE;
+      }
+      if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
+        x_deltav += ACCEL_RATE;
+      }
 
       //Utilize the resist function: slowing it down
       x_deltav = resist(x_vel, x_deltav);
@@ -207,19 +239,22 @@ impl Demo for SDL04 {
       //self.core.wincan.clear();
 
       // not exceed speed limit
-      x_vel = (x_vel + x_deltav).clamp(-MAX_SPEED,MAX_SPEED);
-      y_vel = (y_vel + y_deltav).clamp(-MAX_SPEED,MAX_SPEED);
-     
+      x_vel = (x_vel + x_deltav).clamp(-MAX_SPEED, MAX_SPEED);
+      y_vel = (y_vel + y_deltav).clamp(-MAX_SPEED, MAX_SPEED);
       // Try to move horizontally
       player_box.set_x(player_box.x() + x_vel);
       // Check for collision between player and gyms as well as cam bounds
       // Use the "go-back" approach to collision resolution
       if check_collision(&player_box, &gym_1_box)
-          || check_collision(&player_box, &gym_2_box)
-          || player_box.left() < 0
-          || player_box.right() > CAM_W as i32
+        || check_collision(&player_box, &gym_2_box)
+        || check_collision(&player_box, &gym_3_box)
+        || check_collision(&player_box, &gym_4_box)
+        || check_collision(&player_box, &hospital_box)
+        || check_collision(&player_box, &home_box)
+        || player_box.left() < 0
+        || player_box.right() > CAM_W as i32
       {
-          player_box.set_x(player_box.x() - x_vel);
+        player_box.set_x(player_box.x() - x_vel);
       }
 
       // Try to move vertically
@@ -227,11 +262,15 @@ impl Demo for SDL04 {
       // Check for collision between player and gyms as well as cam bounds(need to consider trees)
       // Use the "go-back" approach to collision resolution
       if check_collision(&player_box, &gym_1_box)
-          || check_collision(&player_box, &gym_2_box)
-          || player_box.top() < 64
-          || player_box.bottom() > CAM_H as i32 - 64
+        || check_collision(&player_box, &gym_2_box)
+        || check_collision(&player_box, &gym_3_box)
+        || check_collision(&player_box, &gym_4_box)
+        || check_collision(&player_box, &hospital_box)
+        || check_collision(&player_box, &home_box)
+        || player_box.top() < 64
+        || player_box.bottom() > CAM_H as i32 - 64
       {
-          player_box.set_y(player_box.y() - y_vel);
+        player_box.set_y(player_box.y() - y_vel);
       }
 
       //self.core.wincan.copy(&tree_sheet, cur_bg, None)?;
