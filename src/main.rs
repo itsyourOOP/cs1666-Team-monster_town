@@ -228,8 +228,8 @@ impl Demo for SDL04 {
       // Use the "go-back" approach to collision resolution
       if check_collision(&player_box, &gym_1_box)
           || check_collision(&player_box, &gym_2_box)
-          || player_box.top() < 32
-          || player_box.bottom() > CAM_H as i32 - 32
+          || player_box.top() < 64
+          || player_box.bottom() > CAM_H as i32 - 64
       {
           player_box.set_y(player_box.y() - y_vel);
       }
