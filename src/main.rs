@@ -13,32 +13,43 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::BlendMode;
-//use sdl2::render::Texture;
+
 use std::collections::HashSet;
 use std::path::Path;
-
-//use std::time::Duration;
-//use std::thread;
 
 const TITLE: &str = "Monster Town Week 3";
 const TILE_SIZE: u32 = 16;
 
-const VSYNC: bool = true;
 // Camera
 const CAM_W: u32 = 1280;
 const CAM_H: u32 = 720;
 
+const VSYNC: bool = true;
+
 const MAX_SPEED: i32 = 5;
+const ACCEL_RATE: i32 = 1;
+
+const _SCALE_UP: i16 = 3;
 
 const BUFFER_FRAMES: u32 = 0;
-
-// Im not sure what these are used for
-const SCALE_UP: i16 = 3;
-const HELP_WHERE_DOES_THIS_COME_FROM: i32 = 1250;
 
 enum Map {
   Overworld,
   Battle,
+}
+
+fn resist(vel: i32, deltav: i32) -> i32 {
+  if deltav == 0 {
+    if vel > 0 {
+      -1
+    } else if vel < 0 {
+      1
+    } else {
+      deltav
+    }
+  } else {
+    deltav
+  }
 }
 
 fn check_collision(a: &Rect, b: &Rect) -> bool {
@@ -85,16 +96,21 @@ fn run(
   wincan: &mut sdl2::render::WindowCanvas,
   event_pump: &mut sdl2::EventPump,
 ) -> Result<(), String> {
+  // Texture
+  let texture_creator = wincan.texture_creator();
+
+  let rock_sheet = texture_creator.load_texture("images/rock_patch.png")?;
+  let gym_1 = texture_creator.load_texture("images/GymV6.png")?;
+  let gym_2 = texture_creator.load_texture("images/GymV7.png")?;
+  let gym_3 = texture_creator.load_texture("images/GymV3.png")?;
+  let gym_4 = texture_creator.load_texture("images/GymV2.png")?;
+  let hospital = texture_creator.load_texture("images/center.png")?;
+  let home = texture_creator.load_texture("images/home.png")?;
+  let battle_bg = texture_creator.load_texture("images/battle_bg.png")?;
+
   wincan.set_blend_mode(BlendMode::Blend);
 
   let mut loaded_map = Map::Battle;
-
-  let texture_creator = wincan.texture_creator();
-
-  let gym = texture_creator.load_texture("images/GymV6.png")?;
-  let second_gym = texture_creator.load_texture("images/GymV7.png")?;
-
-  let battle_bg = texture_creator.load_texture("images/battle_bg.png")?;
 
   let player_monster = "deer pokemon";
   let enemy_monster = "Chromacat";
@@ -118,7 +134,8 @@ fn run(
     .map(|x| x.to_string())
     .collect::<Vec<String>>();
 
-  let (attacks, effects) = battle::create_attack_tuples(&texture_creator, &font, &player_moves, &player_e)?;
+  let (attacks, effects) =
+    battle::create_attack_tuples(&texture_creator, &font, &player_moves, &player_e)?;
 
   let player_mon = &player_monster.to_string();
   let enemy_mon = &enemy_monster.to_string();
@@ -126,7 +143,8 @@ fn run(
   let player_health: f32 = 100.0;
   let enemy_health: f32 = 100.0;
 
-  let (player_name_tup, enemy_name_tup) = battle::create_name_tuples(&texture_creator, &font, &player_mon, &enemy_mon)?;
+  let (player_name_tup, enemy_name_tup) =
+    battle::create_name_tuples(&texture_creator, &font, &player_mon, &enemy_mon)?;
 
   let mut battle_init = battle::Battle {
     player_name: &player_name_tup,
@@ -144,16 +162,17 @@ fn run(
   let mut current_choice: i32 = 0;
   let mut selection_buffer = 0;
 
+  let mut x_vel = 0;
+  let mut y_vel = 0;
+
   // Player Creation from mod player.rs
-  let mut p = Player::create(
-    Rect::new(
-      0,
-      0,
-      TILE_SIZE * SCALE_UP as u32,
-      TILE_SIZE * SCALE_UP as u32,
-    ),
-    texture_creator.load_texture("images/Character.png")?,
+  // it has a start position
+  let player = Player::create(
+    Rect::new(64, 64, TILE_SIZE * 2 as u32, TILE_SIZE * 2 as u32),
+    texture_creator.load_texture("images/walk1_32.png")?,
   );
+
+  let mut player_box = Rect::new(player.x(), player.y(), player.height(), player.width());
 
   'gameloop: loop {
     for event in event_pump.poll_iter() {
@@ -176,88 +195,122 @@ fn run(
 
     match loaded_map {
       Map::Overworld => {
+        wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
+        //wincan.clear();
+
         overworld::draw_overworld(wincan)?;
 
+        // Draw rock patch
+        let mut i = 60;
+        while i * TILE_SIZE < 1240 {
+          let src = Rect::new(((i % 2) * TILE_SIZE) as i32, 0, TILE_SIZE, 2 * TILE_SIZE);
+          let pos_1 = Rect::new((i * TILE_SIZE) as i32, 66, TILE_SIZE, 2 * TILE_SIZE);
+          let pos_2 = Rect::new((i * TILE_SIZE) as i32, 98, TILE_SIZE, 2 * TILE_SIZE);
+          let pos_3 = Rect::new((i * TILE_SIZE) as i32, 130, TILE_SIZE, 2 * TILE_SIZE);
+          let pos_4 = Rect::new((i * TILE_SIZE) as i32, 162, TILE_SIZE, 2 * TILE_SIZE);
+          let pos_5 = Rect::new((i * TILE_SIZE) as i32, 194, TILE_SIZE, 2 * TILE_SIZE);
+
+          wincan.copy(&rock_sheet, src, pos_1)?;
+          wincan.copy(&rock_sheet, src, pos_2)?;
+          wincan.copy(&rock_sheet, src, pos_3)?;
+          wincan.copy(&rock_sheet, src, pos_4)?;
+          wincan.copy(&rock_sheet, src, pos_5)?;
+          i += 1;
+        }
+
         // Create the Town Gym
-        let gym_box = Rect::new(340, 90, 150, 150);
-        wincan.copy(&gym, None, gym_box)?;
+        let gym_1_box = Rect::new(340, 100, 150, 150);
+        wincan.copy(&gym_1, None, gym_1_box)?;
+
         // Create Second Town Gym
-        let second_gym_box = Rect::new(1110, 450, 150, 150);
-        wincan.copy(&second_gym, None, second_gym_box)?;
+        let gym_2_box = Rect::new(1110, 450, 150, 150);
+        wincan.copy(&gym_2, None, gym_2_box)?;
 
-        let movement_direction;
-        let speed_update;
+        // Create Third Town Gym
+        let gym_3_box = Rect::new(810, 250, 150, 150);
+        wincan.copy(&gym_3, None, gym_3_box)?;
 
+        // Create Fourth Town Gym
+        let gym_4_box = Rect::new(300, 450, 150, 150);
+        wincan.copy(&gym_4, None, gym_4_box)?;
+
+        //Create Hospital
+        let hospital_box = Rect::new(50, 450, 150, 150);
+        wincan.copy(&hospital, None, hospital_box)?;
+
+        // Create Home Entity
+        let home_box = Rect::new(610, 250, 150, 140);
+        wincan.copy(&home, None, home_box)?;
+
+        let mut x_deltav = 0;
+        let mut y_deltav = 0;
         if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
-          movement_direction = 1;
-        } else if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
-          movement_direction = 2;
-        } else if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
-          movement_direction = 3;
-        } else if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
-          movement_direction = 4;
-        } else {
-          movement_direction = 0;
+          y_deltav -= ACCEL_RATE;
+        }
+        if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
+          x_deltav -= ACCEL_RATE;
+        }
+        if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
+          y_deltav += ACCEL_RATE;
+        }
+        if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
+          x_deltav += ACCEL_RATE;
         }
 
-        let x_limits = (0, HELP_WHERE_DOES_THIS_COME_FROM as i32);
+        //Utilize the resist function: slowing it down
+        x_deltav = resist(x_vel, x_deltav);
+        y_deltav = resist(y_vel, y_deltav);
 
-        match movement_direction {
-          1 => {
-            speed_update = (0, -MAX_SPEED as i32);
-          }
-          2 => {
-            speed_update = (-MAX_SPEED as i32, 0);
-          }
-          3 => {
-            speed_update = (0, MAX_SPEED as i32);
-          }
-          4 => {
-            speed_update = (MAX_SPEED as i32, 0);
-          }
-          _ => {
-            speed_update = (0, 0);
-          }
-        }
-        p.update_pos(speed_update, x_limits, (0, 700));
+        // not exceed speed limit
+        x_vel = (x_vel + x_deltav).clamp(-MAX_SPEED, MAX_SPEED);
+        y_vel = (y_vel + y_deltav).clamp(-MAX_SPEED, MAX_SPEED);
 
-        // Collision Check With First Gym
-        let player_box = Rect::new(p.x(), p.y(), p.height(), p.width());
-        if check_collision(&player_box, &gym_box) {
-          p.set_x(p.x() - speed_update.0);
-        }
-        if check_collision(&player_box, &gym_box) {
-          p.set_y(p.y() - speed_update.1);
+        // Try to move horizontally
+        player_box.set_x(player_box.x() + x_vel);
+
+        // Check for collision between player and gyms as well as cam bounds
+        // Use the "go-back" approach to collision resolution
+        if check_collision(&player_box, &gym_1_box)
+          || check_collision(&player_box, &gym_2_box)
+          || check_collision(&player_box, &gym_3_box)
+          || check_collision(&player_box, &gym_4_box)
+          || check_collision(&player_box, &hospital_box)
+          || check_collision(&player_box, &home_box)
+          || player_box.left() < 0
+          || player_box.right() > CAM_W as i32
+        {
+          player_box.set_x(player_box.x() - x_vel);
         }
 
-        // Collision Check with Second Gym
-        if check_collision(&player_box, &second_gym_box) {
-          p.set_x(p.x() - speed_update.0);
-        }
-        if check_collision(&player_box, &second_gym_box) {
-          p.set_y(p.y() - speed_update.1);
+        // Try to move vertically
+        player_box.set_y(player_box.y() + y_vel);
+        // Check for collision between player and gyms as well as cam bounds(need to consider trees)
+        // Use the "go-back" approach to collision resolution
+        if check_collision(&player_box, &gym_1_box)
+          || check_collision(&player_box, &gym_2_box)
+          || check_collision(&player_box, &gym_3_box)
+          || check_collision(&player_box, &gym_4_box)
+          || check_collision(&player_box, &hospital_box)
+          || check_collision(&player_box, &home_box)
+          || player_box.top() < 64
+          || player_box.bottom() > CAM_H as i32 - 64
+        {
+          player_box.set_y(player_box.y() - y_vel);
         }
 
         let battle_box = Rect::new(835, 565, 32, 32);
         if check_collision(&player_box, &battle_box) {
-          //loaded_map = Map::Battle;
-          p.set_x(p.x() - speed_update.0);
-          p.set_y(p.y() - speed_update.1);
+          player_box.set_x(player_box.x() - x_vel);
+          player_box.set_y(player_box.y() - y_vel);
+          x_vel = 0;
+          y_vel = 0;
+
           let screen = Rect::new(0, 0, CAM_W, CAM_H);
 
-          let player_cam_pos = Rect::new(
-            p.x(),
-            p.y(),
-            TILE_SIZE * SCALE_UP as u32,
-            TILE_SIZE * SCALE_UP as u32,
-          );
-  
-          wincan.copy(p.texture(), None, player_cam_pos)?;
+          wincan.copy(player.texture(), None, player_box)?;
 
           wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
           for _i in 0..50 {
-            
-
             wincan.fill_rect(screen)?;
             wincan.present();
           }
@@ -265,20 +318,12 @@ fn run(
           continue;
         }
 
-        // Convert player's map position to be camera-relative
-        let player_cam_pos = Rect::new(
-          p.x(),
-          p.y(),
-          TILE_SIZE * SCALE_UP as u32,
-          TILE_SIZE * SCALE_UP as u32,
-        );
-
-        wincan.copy(p.texture(), None, player_cam_pos)?;
+        wincan.copy(player.texture(), None, player_box)?;
 
         wincan.present();
       }
+
       Map::Battle => {
-        
         battle::better_draw_battle(wincan, &battle_init, current_choice as usize, None)?;
 
         if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
@@ -345,6 +390,7 @@ fn run(
 
   Ok(())
 }
+
 fn main() {
   println!("\nRunning {}:", TITLE);
   print!("\tInitting...");
