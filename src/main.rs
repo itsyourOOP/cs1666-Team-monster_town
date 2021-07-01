@@ -99,7 +99,6 @@ fn run(
   // Texture
   let texture_creator = wincan.texture_creator();
 
-  let rock_sheet = texture_creator.load_texture("images/rock_patch.png")?;
   let gym_1 = texture_creator.load_texture("images/GymV6.png")?;
   let gym_2 = texture_creator.load_texture("images/GymV7.png")?;
   let gym_3 = texture_creator.load_texture("images/GymV3.png")?;
@@ -199,24 +198,6 @@ fn run(
         //wincan.clear();
 
         overworld::draw_overworld(wincan)?;
-
-        // Draw rock patch
-        let mut i = 60;
-        while i * TILE_SIZE < 1240 {
-          let src = Rect::new(((i % 2) * TILE_SIZE) as i32, 0, TILE_SIZE, 2 * TILE_SIZE);
-          let pos_1 = Rect::new((i * TILE_SIZE) as i32, 66, TILE_SIZE, 2 * TILE_SIZE);
-          let pos_2 = Rect::new((i * TILE_SIZE) as i32, 98, TILE_SIZE, 2 * TILE_SIZE);
-          let pos_3 = Rect::new((i * TILE_SIZE) as i32, 130, TILE_SIZE, 2 * TILE_SIZE);
-          let pos_4 = Rect::new((i * TILE_SIZE) as i32, 162, TILE_SIZE, 2 * TILE_SIZE);
-          let pos_5 = Rect::new((i * TILE_SIZE) as i32, 194, TILE_SIZE, 2 * TILE_SIZE);
-
-          wincan.copy(&rock_sheet, src, pos_1)?;
-          wincan.copy(&rock_sheet, src, pos_2)?;
-          wincan.copy(&rock_sheet, src, pos_3)?;
-          wincan.copy(&rock_sheet, src, pos_4)?;
-          wincan.copy(&rock_sheet, src, pos_5)?;
-          i += 1;
-        }
 
         // Create the Town Gym
         let gym_1_box = Rect::new(340, 100, 150, 150);
