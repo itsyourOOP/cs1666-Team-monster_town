@@ -193,6 +193,26 @@ pub fn better_draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: 
     // Calculate and add health bars for each monster
     health_bars(wincan, battle_init.player_health, battle_init.enemy_health)?;
 
+    // FOR DEMO ONLY
+    let s = vec!["Demo Instructions:","Use AD/←→ to choose a move","Use Enter to submit your choice", "Use K to kill the other monster", "Use E to exit the battle"];
+    let texture_creator = wincan.texture_creator();
+
+    for (index, item) in s.iter().enumerate() {
+        let surface = battle_init.font
+            .render(&item)
+            .blended(Color::BLACK)
+            .map_err(|e| e.to_string())?;
+        let texture = texture_creator
+            .create_texture_from_surface(&surface)
+            .map_err(|e| e.to_string())?;
+
+        let TextureQuery { width, height, .. } = texture.query();
+
+        let text_rect = Rect::new(25, 300 + (20*index) as i32, width, 20);
+        let text_rect = fit(text_rect, width, height);
+        wincan.copy(&texture, None, text_rect)?;
+    }
+    
     // Print out a message if needed
     match message {
         Some(text) => {

@@ -128,8 +128,6 @@ fn run(
 
   let (player_name_tup, enemy_name_tup) = battle::create_name_tuples(&texture_creator, &font, &player_mon, &enemy_mon)?;
 
-
-
   let mut battle_init = battle::Battle {
     player_name: &player_name_tup,
     enemy_name: &enemy_name_tup,
@@ -242,25 +240,29 @@ fn run(
 
         let battle_box = Rect::new(835, 565, 32, 32);
         if check_collision(&player_box, &battle_box) {
-          loaded_map = Map::Battle;
-
-          //battle::Battle { player_name, enemy_name, player_texture, enemy_texture, font, } =
-          /*
-          battle_init = battle::Battle {
-            player_name: player_monster,
-            enemy_name: enemy_monster,
-            background_texture: &battle_bg,
-            player_texture: &player_texture,
-            enemy_texture: &enemy_texture,
-            font: &font,
-            player_moves: &player_moves,
-            test: &test,
-            player_attacks: &attacks,
-          };
-          */
-
+          //loaded_map = Map::Battle;
           p.set_x(p.x() - speed_update.0);
           p.set_y(p.y() - speed_update.1);
+          let screen = Rect::new(0, 0, CAM_W, CAM_H);
+
+          let player_cam_pos = Rect::new(
+            p.x(),
+            p.y(),
+            TILE_SIZE * SCALE_UP as u32,
+            TILE_SIZE * SCALE_UP as u32,
+          );
+  
+          wincan.copy(p.texture(), None, player_cam_pos)?;
+
+          wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
+          for _i in 0..50 {
+            
+
+            wincan.fill_rect(screen)?;
+            wincan.present();
+          }
+          loaded_map = Map::Battle;
+          continue;
         }
 
         // Convert player's map position to be camera-relative
