@@ -154,40 +154,40 @@ pub fn draw_overworld(wincan: &mut sdl2::render::WindowCanvas) -> Result<(), Str
 
     i += 1;
   }
-  
+
   // Draw pond to the middle center left of map
-  let mut i = 4;
-  while i * TILE_SIZE < 300 {
-    let src = Rect::new(((i % 2) * TILE_SIZE) as i32, 0, TILE_SIZE, 2 * TILE_SIZE);
-    let pos_1 = Rect::new((i * TILE_SIZE) as i32, 280, TILE_SIZE, 2 * TILE_SIZE);
-    let pos_2 = Rect::new((i * TILE_SIZE) as i32, 312, TILE_SIZE, 2 * TILE_SIZE);
-    let pos_3 = Rect::new((i * TILE_SIZE) as i32, 344, TILE_SIZE, 2 * TILE_SIZE);
-    let pos_4 = Rect::new((i * TILE_SIZE) as i32, 376, TILE_SIZE, 2 * TILE_SIZE);
+  let mut i = 4;
+  while i * TILE_SIZE < 300 {
+    let src = Rect::new(((i % 2) * TILE_SIZE) as i32, 0, TILE_SIZE, 2 * TILE_SIZE);
+    let pos_1 = Rect::new((i * TILE_SIZE) as i32, 280, TILE_SIZE, 2 * TILE_SIZE);
+    let pos_2 = Rect::new((i * TILE_SIZE) as i32, 312, TILE_SIZE, 2 * TILE_SIZE);
+    let pos_3 = Rect::new((i * TILE_SIZE) as i32, 344, TILE_SIZE, 2 * TILE_SIZE);
+    let pos_4 = Rect::new((i * TILE_SIZE) as i32, 376, TILE_SIZE, 2 * TILE_SIZE);
 
-    wincan.copy(&water_sheet, src, pos_1)?;
-    wincan.copy(&water_sheet, src, pos_2)?;
-    wincan.copy(&water_sheet, src, pos_3)?;
-    wincan.copy(&water_sheet, src, pos_4)?;
+    wincan.copy(&water_sheet, src, pos_1)?;
+    wincan.copy(&water_sheet, src, pos_2)?;
+    wincan.copy(&water_sheet, src, pos_3)?;
+    wincan.copy(&water_sheet, src, pos_4)?;
 
-    i += 1;
-  }
+    i += 1;
+  }
 
-  // Draw small rock patch in middle of map
-  let mut i = 24;
-  while i * TILE_SIZE < 570 {
-    let src = Rect::new(((i % 2) * TILE_SIZE) as i32, 0, TILE_SIZE, 2 * TILE_SIZE);
-    let pos_1 = Rect::new((i * TILE_SIZE) as i32, 280, TILE_SIZE, 2 * TILE_SIZE);
-    let pos_2 = Rect::new((i * TILE_SIZE) as i32, 312, TILE_SIZE, 2 * TILE_SIZE);
-    let pos_3 = Rect::new((i * TILE_SIZE) as i32, 344, TILE_SIZE, 2 * TILE_SIZE);
-    let pos_4 = Rect::new((i * TILE_SIZE) as i32, 376, TILE_SIZE, 2 * TILE_SIZE);
+  // Draw small rock patch in middle of map
+  let mut i = 24;
+  while i * TILE_SIZE < 570 {
+    let src = Rect::new(((i % 2) * TILE_SIZE) as i32, 0, TILE_SIZE, 2 * TILE_SIZE);
+    let pos_1 = Rect::new((i * TILE_SIZE) as i32, 280, TILE_SIZE, 2 * TILE_SIZE);
+    let pos_2 = Rect::new((i * TILE_SIZE) as i32, 312, TILE_SIZE, 2 * TILE_SIZE);
+    let pos_3 = Rect::new((i * TILE_SIZE) as i32, 344, TILE_SIZE, 2 * TILE_SIZE);
+    let pos_4 = Rect::new((i * TILE_SIZE) as i32, 376, TILE_SIZE, 2 * TILE_SIZE);
 
-    wincan.copy(&grass_sheet, src, pos_1)?;
-    wincan.copy(&grass_sheet, src, pos_2)?;
-    wincan.copy(&grass_sheet, src, pos_3)?;
-    wincan.copy(&grass_sheet, src, pos_4)?;
+    wincan.copy(&grass_sheet, src, pos_1)?;
+    wincan.copy(&grass_sheet, src, pos_2)?;
+    wincan.copy(&grass_sheet, src, pos_3)?;
+    wincan.copy(&grass_sheet, src, pos_4)?;
 
-    i += 1;
-  }
+    i += 1;
+  }
 
   Ok(())
 }
