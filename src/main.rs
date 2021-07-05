@@ -106,6 +106,8 @@ fn run(
   let hospital = texture_creator.load_texture("images/center.png")?;
   let home = texture_creator.load_texture("images/home.png")?;
   let battle_bg = texture_creator.load_texture("images/battle_bg.png")?;
+  let npc_static = texture_creator.load_texture("images/NPC_1.png")?;
+  let npc_moving = texture_creator.load_texture("images/move_npc.png")?;
 
   wincan.set_blend_mode(BlendMode::Blend);
 
@@ -164,6 +166,14 @@ fn run(
   let mut x_vel = 0;
   let mut y_vel = 0;
 
+  let mut delta_x_npc1 = 0;
+  let mut delta_x_npc2 = 0;
+  let mut delta_x_npc3 = 0;
+
+  let mut flip_1 = false;
+  let mut flip_2 = false;
+  let mut flip_3 = false;
+
   // Player Creation from mod player.rs
   // it has a start position
   let player = Player::create(
@@ -172,6 +182,29 @@ fn run(
   );
 
   let mut player_box = Rect::new(player.x(), player.y(), player.height(), player.width());
+
+  // Create roaming npc players
+
+  let npc_player1 = Player::create(
+    Rect::new(480,612,TILE_SIZE * 2 as u32,TILE_SIZE * 2 as u32),
+    texture_creator.load_texture("images/single_npc.png")?,
+  );
+
+  //let mut npc1_box = Rect::new(npc_player1.x(), npc_player1.y(), npc_player1.height(), npc_player1.width());
+
+  let npc_player2 = Player::create(
+    Rect::new(510,430,TILE_SIZE * 2 as u32,TILE_SIZE * 2 as u32),
+    texture_creator.load_texture("images/single_npc.png")?,
+  );
+
+  //let mut npc2_box = Rect::new(npc_player2.x(), npc_player2.y(), npc_player2.height(), npc_player2.width());
+
+  let npc_player3 = Player::create(
+    Rect::new(992,240,TILE_SIZE * 2 as u32,TILE_SIZE * 2 as u32),
+    texture_creator.load_texture("images/single_npc.png")?,
+  );
+
+  //let mut npc3_box = Rect::new(npc_player3.x(), npc_player3.y(), npc_player3.height(), npc_player3.width());
 
   'gameloop: loop {
     for event in event_pump.poll_iter() {
@@ -223,6 +256,20 @@ fn run(
         let home_box = Rect::new(610, 250, 150, 140);
         wincan.copy(&home, None, home_box)?;
 
+        // Create several static npcs
+        let npc_static_box1 = Rect::new(490,230,32,32);
+        wincan.copy(&npc_static, None, npc_static_box1);
+        let npc_static_box2 = Rect::new(890,430,32,32);
+        wincan.copy(&npc_static, None, npc_static_box2);
+        let npc_static_box3 = Rect::new(560,65,32,32);
+        wincan.copy(&npc_static, None, npc_static_box3);
+        let npc_static_box4 = Rect::new(322, 330,32,32);
+        wincan.copy(&npc_static, None, npc_static_box4);
+        let npc_static_box5 = Rect::new(240,480,32,32);
+        wincan.copy(&npc_static, None, npc_static_box5);
+        let npc_static_box6 = Rect::new(880,180,32,32);
+        wincan.copy(&npc_static, None, npc_static_box6);
+
         let mut x_deltav = 0;
         let mut y_deltav = 0;
         if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
@@ -249,7 +296,33 @@ fn run(
         // Try to move horizontally
         player_box.set_x(player_box.x() + x_vel);
 
-        // Check for collision between player and gyms as well as cam bounds
+        // Try to move vertically
+        player_box.set_y(player_box.y() + y_vel);
+
+        // Three NPCs are moving horizontally
+        let mut npc1_box = Rect::new(npc_player1.x(), npc_player1.y(), npc_player1.height(), npc_player1.width());
+        let mut npc2_box = Rect::new(npc_player2.x(), npc_player2.y(), npc_player2.height(), npc_player2.width());
+        let mut npc3_box = Rect::new(npc_player3.x(), npc_player3.y(), npc_player3.height(), npc_player3.width());
+        npc1_box.set_x((npc1_box.x() + delta_x_npc1).clamp(480,600));
+        npc2_box.set_x((npc2_box.x() + delta_x_npc2).clamp(510,640));
+        npc3_box.set_x((npc3_box.x() + delta_x_npc3).clamp(992,1117));
+
+        if npc1_box.x() == 600  { flip_1 = true; }
+        if npc1_box.x() == 480 { flip_1 = false; }
+        if flip_1 == false { delta_x_npc1 += 1; }
+        if flip_1 == true{ delta_x_npc1 -= 1;}
+
+        if npc2_box.x() == 640  { flip_2 = true; }
+        if npc2_box.x() == 510 { flip_2 = false; }
+        if flip_2 == false { delta_x_npc2 += 1; }
+        if flip_2 == true{ delta_x_npc2 -= 1;}
+        
+        if npc3_box.x() == 1117  { flip_3 = true; }
+        if npc3_box.x() == 992 { flip_3 = false; }
+        if flip_3 == false { delta_x_npc3 += 1; }
+        if flip_3 == true{ delta_x_npc3 -= 1;}
+
+        // Check for collision between player and gyms as well as cam bounds(need to consider trees)
         // Use the "go-back" approach to collision resolution
         if check_collision(&player_box, &gym_1_box)
           || check_collision(&player_box, &gym_2_box)
@@ -259,35 +332,31 @@ fn run(
           || check_collision(&player_box, &home_box)
           || player_box.left() < 0
           || player_box.right() > CAM_W as i32
-        {
-          player_box.set_x(player_box.x() - x_vel);
-        }
-
-        // Try to move vertically
-        player_box.set_y(player_box.y() + y_vel);
-        // Check for collision between player and gyms as well as cam bounds(need to consider trees)
-        // Use the "go-back" approach to collision resolution
-        if check_collision(&player_box, &gym_1_box)
-          || check_collision(&player_box, &gym_2_box)
-          || check_collision(&player_box, &gym_3_box)
-          || check_collision(&player_box, &gym_4_box)
-          || check_collision(&player_box, &hospital_box)
-          || check_collision(&player_box, &home_box)
           || player_box.top() < 64
           || player_box.bottom() > CAM_H as i32 - 64
         {
+          player_box.set_x(player_box.x() - x_vel);
           player_box.set_y(player_box.y() - y_vel);
         }
 
-        let battle_box = Rect::new(835, 565, 32, 32);
-        if check_collision(&player_box, &battle_box) {
+        // Check for collision between player and gyms as well as cam bounds
+        // Use the "go-back" approach to collision resolution
+        if check_collision(&player_box, &npc_static_box1)
+          || check_collision(&player_box, &npc_static_box2)
+          || check_collision(&player_box, &npc_static_box3)
+          || check_collision(&player_box, &npc_static_box4)
+          || check_collision(&player_box, &npc_static_box5)
+          || check_collision(&player_box, &npc_static_box6)
+          || check_collision(&player_box, &npc1_box)
+          || check_collision(&player_box, &npc2_box)
+          || check_collision(&player_box, &npc3_box)
+        {
           player_box.set_x(player_box.x() - x_vel);
           player_box.set_y(player_box.y() - y_vel);
           x_vel = 0;
           y_vel = 0;
 
           let screen = Rect::new(0, 0, CAM_W, CAM_H);
-
           wincan.copy(player.texture(), None, player_box)?;
 
           wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
@@ -300,6 +369,34 @@ fn run(
         }
 
         wincan.copy(player.texture(), None, player_box)?;
+        //wincan.copy(npc_player1.texture(),None,npc1_box)?;
+        wincan.copy_ex(
+          npc_player1.texture(),
+          Rect::new(0, 0, 32, 32),
+          Rect::new(npc1_box.x(), npc1_box.y(), 32, 32),
+          0.0,
+          None,
+          flip_1,
+          false,
+        )?;
+        wincan.copy_ex(
+          npc_player2.texture(),
+          Rect::new(0, 0, 32, 32),
+          Rect::new(npc2_box.x(), npc2_box.y(), 32, 32),
+          0.0,
+          None,
+          flip_2,
+          false,
+        )?;
+        wincan.copy_ex(
+          npc_player3.texture(),
+          Rect::new(0, 0, 32, 32),
+          Rect::new(npc3_box.x(), npc3_box.y(), 32, 32),
+          0.0,
+          None,
+          flip_3,
+          false,
+        )?;
 
         wincan.present();
       }
