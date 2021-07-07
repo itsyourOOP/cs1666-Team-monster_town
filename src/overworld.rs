@@ -1,3 +1,7 @@
+extern crate rand;
+
+use std::collections::HashMap;
+
 //use sdl2::event::Event;
 use sdl2::image::LoadTexture;
 //use sdl2::keyboard::Keycode;
@@ -10,6 +14,8 @@ const TILE_SIZE: u32 = 16;
 const CAM_W: u32 = 1280;
 const CAM_H: u32 = 720;
 
+
+// it also serve as tagging the blocks as spawnable
 pub fn draw_overworld(wincan: &mut sdl2::render::WindowCanvas) -> Result<(), String> {
   let texture_creator = wincan.texture_creator();
 
