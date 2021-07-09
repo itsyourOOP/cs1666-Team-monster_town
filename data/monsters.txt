@@ -1,0 +1,5 @@
+monster_name, attack_stat, defence_stat, monster_type
+Reusoon,95,55,Normal,Leer,Growl,Tail Attack,[NULL ATTACK]
+Chromacat,65,85,Normal,Leer,Growl,Wing Flap,Seed Pistol
+melon-mon,75,60,Grass,Seed Pistol,[NULL ATTACK],[NULL ATTACK],[NULL ATTACK]
+deer pokemon,85,75,Flying,Wing Flap,[NULL ATTACK],[NULL ATTACK],[NULL ATTACK]

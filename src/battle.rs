@@ -2,10 +2,7 @@
 //use std::thread;
 //use std::collections::HashSet;
 
-//use std::path::Path;
-
 use sdl2::pixels::Color;
-//use sdl2::image::LoadTexture;
 use sdl2::render::TextureQuery;
 
 use std::time::Duration;
@@ -130,8 +127,10 @@ pub fn create_name_tuples<'a, T>(
 }
 
 pub struct Battle<'a> {
-    pub player_name: &'a (sdl2::render::Texture<'a>, Rect),
-    pub enemy_name: &'a (sdl2::render::Texture<'a>, Rect),
+    pub player_name: &'a String,
+    pub enemy_name: &'a String,
+    pub player_name_texture: &'a (sdl2::render::Texture<'a>, Rect),
+    pub enemy_name_texture: &'a (sdl2::render::Texture<'a>, Rect),
     pub background_texture: &'a sdl2::render::Texture<'a>,
     pub player_texture: &'a sdl2::render::Texture<'a>,
     pub enemy_texture: &'a sdl2::render::Texture<'a>,
@@ -143,15 +142,17 @@ pub struct Battle<'a> {
 }
 
 impl<'a> Battle<'a> {
-    pub fn set_player_health(&mut self, new_health: f32) {
-        self.player_health = new_health;
+    pub fn apply_player_damage(&mut self, damage: f32) {
+        self.player_health -= damage;
+        self.player_health = self.player_health.clamp(0.0, 100.0);
     }
-    pub fn set_enemy_health(&mut self, new_health: f32) {
-        self.enemy_health = new_health;
+    pub fn apply_enemy_damage(&mut self, damage: f32) {
+        self.enemy_health -= damage;
+        self.enemy_health = self.enemy_health.clamp(0.0, 100.0);
     }
 }
 
-pub fn better_draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle, choice: usize, message: Option<String>) -> Result<(), String> {
+pub fn better_draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle, choice: Option<usize>, message: Option<String>) -> Result<(), String> {
     // Load the battle scene background
     wincan.copy(&battle_init.background_texture, None, Rect::new(0,0,CAM_W,CAM_H))?;
     
@@ -162,11 +163,18 @@ pub fn better_draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: 
 
     // Create an outline around the move that is currently selected
     let outline_size = 5;
-    let r = move_rects[choice];
-    let move_outline_rect = Rect::new(r.x() - outline_size, r.y() - outline_size, (r.width() + (2*outline_size)as u32) as u32, (r.height() + (2*outline_size)as u32) as u32);
 
-    wincan.set_draw_color(Color::RGB(0xf6, 0x52, 0x41));
-    wincan.fill_rect(move_outline_rect)?;
+    match choice {
+        Some(option) => {
+            let r = move_rects[option];
+            let move_outline_rect = Rect::new(r.x() - outline_size, r.y() - outline_size, (r.width() + (2*outline_size)as u32) as u32, (r.height() + (2*outline_size)as u32) as u32);
+
+            wincan.set_draw_color(Color::RGB(0xf6, 0x52, 0x41));
+            wincan.fill_rect(move_outline_rect)?;
+        }
+        None => {}
+    };
+    
 
     // For all moves
     for (index, item) in move_rects.into_iter().enumerate()  {
@@ -183,8 +191,8 @@ pub fn better_draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: 
     }
 
     // Add the names of both monsters
-    wincan.copy(&battle_init.player_name.0, None, battle_init.player_name.1)?;
-    wincan.copy(&battle_init.enemy_name.0, None, battle_init.enemy_name.1)?;
+    wincan.copy(&battle_init.player_name_texture.0, None, battle_init.player_name_texture.1)?;
+    wincan.copy(&battle_init.enemy_name_texture.0, None, battle_init.enemy_name_texture.1)?;
 
     // Add both monsters
     wincan.copy(&battle_init.player_texture, None, Rect::new(800,275,200,200))?;
@@ -194,7 +202,7 @@ pub fn better_draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: 
     health_bars(wincan, battle_init.player_health, battle_init.enemy_health)?;
 
     // FOR DEMO ONLY
-    let s = vec!["Demo Instructions:","Use AD/←→ to choose a move","Use Enter to submit your choice", "Use K to kill the other monster", "Use E to exit the battle"];
+    let s = vec!["Demo Instructions:","Use AD/←→ to choose a move","Use Enter to submit your choice"];
     let texture_creator = wincan.texture_creator();
 
     for (index, item) in s.iter().enumerate() {
