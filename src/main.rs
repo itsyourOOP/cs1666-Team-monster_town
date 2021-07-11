@@ -4,7 +4,10 @@ extern crate sdl2;
 mod battle;
 mod overworld;
 mod player;
+mod monster;
 
+use monster::load_mons;
+use monster::load_moves;
 use player::Player;
 
 use sdl2::event::Event;
@@ -16,6 +19,11 @@ use sdl2::render::BlendMode;
 
 use std::collections::HashSet;
 use std::path::Path;
+use std::time::Duration;
+use std::thread;
+
+use rand::{self, Rng};
+use rand::thread_rng;
 
 const TITLE: &str = "Monster Town Week 3";
 const TILE_SIZE: u32 = 16;
@@ -59,6 +67,30 @@ fn check_collision(a: &Rect, b: &Rect) -> bool {
     true
   }
 }
+
+fn _select_random_monster<'a>(keys: &Vec<&String>) -> usize {
+  return rand::thread_rng().gen_range(0..keys.len())
+}
+
+fn check_within(small: &Rect, large: &Rect) -> bool {
+  if small.left() > large.left() && small.right() < large.right() && small.top() > large.top() 
+    && small.top() > large.top() && small.bottom() < large.bottom() {
+      true
+    } else {
+      false
+    }
+}
+
+fn random_spawn() -> bool{
+  let mut rng = thread_rng();
+  let ran = rng.gen_range(0..200);
+  if ran == 2 {
+    true
+  } else {
+    false
+  }
+}
+
 
 pub fn init(
   title: &str,
@@ -107,14 +139,16 @@ fn run(
   let home = texture_creator.load_texture("images/home.png")?;
   let battle_bg = texture_creator.load_texture("images/battle_bg.png")?;
   let npc_static = texture_creator.load_texture("images/NPC_1.png")?;
-  let npc_moving = texture_creator.load_texture("images/move_npc.png")?;
-
+  
   wincan.set_blend_mode(BlendMode::Blend);
 
   let mut loaded_map = Map::Battle;
 
-  let player_monster = "deer pokemon";
-  let enemy_monster = "Chromacat";
+  let player_monster = String::from("deer pokemon");
+  let enemy_monster = String::from("melon-mon");
+
+  let moves_map = load_moves();
+  let monsters_map = load_mons(&moves_map);
 
   let pi = format!("images/{}.png", player_monster);
   let ei = format!("images/{}.png", enemy_monster);
@@ -125,39 +159,45 @@ fn run(
   let font_path = Path::new(r"./fonts/framd.ttf");
   let font = ttf_context.load_font(font_path, 256)?;
 
-  let player_moves = vec!["a", "b", "c", "d"]
+  let player_moves = monsters_map[&player_monster].moves
     .iter()
-    .map(|x| x.to_string())
+    .map(|d| d.name.clone())
     .collect::<Vec<String>>();
 
-  let player_e = vec!["w", "x", "y", "z"]
+  let player_e = monsters_map[&player_monster].moves
     .iter()
-    .map(|x| x.to_string())
+    .map(|d| d.effect.clone())
     .collect::<Vec<String>>();
 
   let (attacks, effects) =
     battle::create_attack_tuples(&texture_creator, &font, &player_moves, &player_e)?;
 
-  let player_mon = &player_monster.to_string();
-  let enemy_mon = &enemy_monster.to_string();
-
-  let player_health: f32 = 100.0;
-  let enemy_health: f32 = 100.0;
-
   let (player_name_tup, enemy_name_tup) =
-    battle::create_name_tuples(&texture_creator, &font, &player_mon, &enemy_mon)?;
+    battle::create_name_tuples(&texture_creator, &font, &player_monster, &enemy_monster)?;
 
-  let mut battle_init = battle::Battle {
-    player_name: &player_name_tup,
-    enemy_name: &enemy_name_tup,
+  let mut battle_draw = battle::Battle {
+    player_name: &player_monster,
+    enemy_name: &enemy_monster,
+    player_name_texture: &player_name_tup,
+    enemy_name_texture: &enemy_name_tup,
     background_texture: &battle_bg,
     player_texture: &player_texture,
     enemy_texture: &enemy_texture,
     font: &font,
     player_attacks: &attacks,
     player_attack_effects: &effects,
-    player_health: player_health,
-    enemy_health: enemy_health,
+    player_health: 100.0,
+    enemy_health: 100.0,
+  };
+
+  let mut battle_state = monster::BattleState {
+    player_turn: monsters_map[&player_monster].attack_stat >= monsters_map[&enemy_monster].attack_stat,
+    player_monster: &monsters_map[&player_monster],
+    opp_monster: &monsters_map[&enemy_monster],
+    self_attack_stages: 0,
+    self_defense_stages: 0,
+    opp_attack_stages: 0,
+    opp_defense_stages: 0,
   };
 
   let mut current_choice: i32 = 0;
@@ -174,8 +214,7 @@ fn run(
   let mut flip_2 = false;
   let mut flip_3 = false;
 
-  // Player Creation from mod player.rs
-  // it has a start position
+  // Player Creation from mod player with a start position
   let player = Player::create(
     Rect::new(64, 64, TILE_SIZE * 2 as u32, TILE_SIZE * 2 as u32),
     texture_creator.load_texture("images/walk1_32.png")?,
@@ -184,27 +223,20 @@ fn run(
   let mut player_box = Rect::new(player.x(), player.y(), player.height(), player.width());
 
   // Create roaming npc players
-
   let npc_player1 = Player::create(
     Rect::new(480,612,TILE_SIZE * 2 as u32,TILE_SIZE * 2 as u32),
     texture_creator.load_texture("images/single_npc.png")?,
   );
-
-  //let mut npc1_box = Rect::new(npc_player1.x(), npc_player1.y(), npc_player1.height(), npc_player1.width());
 
   let npc_player2 = Player::create(
     Rect::new(510,430,TILE_SIZE * 2 as u32,TILE_SIZE * 2 as u32),
     texture_creator.load_texture("images/single_npc.png")?,
   );
 
-  //let mut npc2_box = Rect::new(npc_player2.x(), npc_player2.y(), npc_player2.height(), npc_player2.width());
-
   let npc_player3 = Player::create(
     Rect::new(992,240,TILE_SIZE * 2 as u32,TILE_SIZE * 2 as u32),
     texture_creator.load_texture("images/single_npc.png")?,
   );
-
-  //let mut npc3_box = Rect::new(npc_player3.x(), npc_player3.y(), npc_player3.height(), npc_player3.width());
 
   'gameloop: loop {
     for event in event_pump.poll_iter() {
@@ -228,9 +260,18 @@ fn run(
     match loaded_map {
       Map::Overworld => {
         wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
-        //wincan.clear();
-
+        
         overworld::draw_overworld(wincan)?;
+        let spawnable_areas = overworld::mark_rectangles();
+        //let test = &spawnable_areas[0].x();
+        // iterate over the spawnable rectangles 
+        /*for i in &spawnable_areas{
+          let test_result = check_within(&Rect::new(100,120,1,1),i);
+          println!("{:?}",test_result);
+          if test_result == true && random_spawn() {
+            break;
+          }
+        }*/
 
         // Create the Town Gym
         let gym_1_box = Rect::new(340, 100, 150, 150);
@@ -258,17 +299,17 @@ fn run(
 
         // Create several static npcs
         let npc_static_box1 = Rect::new(490,230,32,32);
-        wincan.copy(&npc_static, None, npc_static_box1);
+        wincan.copy(&npc_static, None, npc_static_box1)?;
         let npc_static_box2 = Rect::new(890,430,32,32);
-        wincan.copy(&npc_static, None, npc_static_box2);
+        wincan.copy(&npc_static, None, npc_static_box2)?;
         let npc_static_box3 = Rect::new(560,65,32,32);
-        wincan.copy(&npc_static, None, npc_static_box3);
+        wincan.copy(&npc_static, None, npc_static_box3)?;
         let npc_static_box4 = Rect::new(322, 330,32,32);
-        wincan.copy(&npc_static, None, npc_static_box4);
+        wincan.copy(&npc_static, None, npc_static_box4)?;
         let npc_static_box5 = Rect::new(240,480,32,32);
-        wincan.copy(&npc_static, None, npc_static_box5);
+        wincan.copy(&npc_static, None, npc_static_box5)?;
         let npc_static_box6 = Rect::new(880,180,32,32);
-        wincan.copy(&npc_static, None, npc_static_box6);
+        wincan.copy(&npc_static, None, npc_static_box6)?;
 
         let mut x_deltav = 0;
         let mut y_deltav = 0;
@@ -339,6 +380,42 @@ fn run(
           player_box.set_y(player_box.y() - y_vel);
         }
 
+        for i in &spawnable_areas{
+          let test_result = check_within(&player_box,i);
+          //println!("{:?}",test_result);
+          if test_result == true && random_spawn() {
+            let screen = Rect::new(0, 0, CAM_W, CAM_H);
+          wincan.copy(player.texture(), None, player_box)?;
+
+          wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
+          for _i in 0..50 {
+            wincan.fill_rect(screen)?;
+            wincan.present();
+          }
+          loaded_map = Map::Battle;
+
+          battle_draw.enemy_health = 100.0;
+
+          // ! Currently unable to change battle_draw traits
+          // TODO Change the battle_state and battle_draw based upon the team of the NPC
+
+          battle_state = monster::BattleState {
+            player_turn: monsters_map[&player_monster].attack_stat >= monsters_map[&enemy_monster].attack_stat,
+            player_monster: &monsters_map[&player_monster],
+            opp_monster: &monsters_map[&enemy_monster],
+            self_attack_stages: 0,
+            self_defense_stages: 0,
+            opp_attack_stages: 0,
+            opp_defense_stages: 0,
+          };
+
+          player_box.set_x(player_box.x() - x_vel);
+          player_box.set_y(player_box.y() - y_vel);
+                  
+          break;
+          }
+        }
+
         // Check for collision between player and gyms as well as cam bounds
         // Use the "go-back" approach to collision resolution
         if check_collision(&player_box, &npc_static_box1)
@@ -351,8 +428,8 @@ fn run(
           || check_collision(&player_box, &npc2_box)
           || check_collision(&player_box, &npc3_box)
         {
-          player_box.set_x(player_box.x() - x_vel);
-          player_box.set_y(player_box.y() - y_vel);
+          player_box.set_x(player_box.x() - 20);
+          player_box.set_y(player_box.y() - 20);
           x_vel = 0;
           y_vel = 0;
 
@@ -365,11 +442,27 @@ fn run(
             wincan.present();
           }
           loaded_map = Map::Battle;
+
+          battle_draw.enemy_health = 100.0;
+
+          // ! Currently unable to change battle_draw traits
+          // TODO Change the battle_state and battle_draw based upon the team of the NPC
+
+          battle_state = monster::BattleState {
+            player_turn: monsters_map[&player_monster].attack_stat >= monsters_map[&enemy_monster].attack_stat,
+            player_monster: &monsters_map[&player_monster],
+            opp_monster: &monsters_map[&enemy_monster],
+            self_attack_stages: 0,
+            self_defense_stages: 0,
+            opp_attack_stages: 0,
+            opp_defense_stages: 0,
+          };
+                  
           continue;
         }
 
         wincan.copy(player.texture(), None, player_box)?;
-        //wincan.copy(npc_player1.texture(),None,npc1_box)?;
+        
         wincan.copy_ex(
           npc_player1.texture(),
           Rect::new(0, 0, 32, 32),
@@ -402,7 +495,7 @@ fn run(
       }
 
       Map::Battle => {
-        battle::better_draw_battle(wincan, &battle_init, current_choice as usize, None)?;
+        battle::better_draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
 
         if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
           if selection_buffer > 0 {
@@ -417,7 +510,7 @@ fn run(
               current_choice
             };
 
-            battle::better_draw_battle(wincan, &battle_init, current_choice as usize, None)?;
+            battle::better_draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
             selection_buffer = BUFFER_FRAMES;
             wincan.present();
           }
@@ -435,28 +528,127 @@ fn run(
               current_choice
             };
             selection_buffer = BUFFER_FRAMES;
-            battle::better_draw_battle(wincan, &battle_init, current_choice as usize, None)?;
+            battle::better_draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
           }
         }
         if keystate.contains(&Keycode::Return) {
-          let f = format!("You selected move #{}!", current_choice + 1);
-          battle::better_draw_battle(wincan, &battle_init, current_choice as usize, Some(f))?;
-        }
-        if keystate.contains(&Keycode::E) {
-          let screen = Rect::new(0, 0, CAM_W, CAM_H);
-          wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
-          for _i in 0..50 {
-            wincan.fill_rect(screen)?;
-            wincan.present();
-          }
-          loaded_map = Map::Overworld;
-        }
-        if keystate.contains(&Keycode::K) {
-          for i in 0..101 {
-            let k: i32 = ((i - 100) as i32).abs();
-            battle_init.set_enemy_health(k as f32);
-            battle_init.set_player_health(100.0);
-            battle::better_draw_battle(wincan, &battle_init, current_choice as usize, None)?;
+          // Battle Logic
+          if battle_state.player_turn {
+            // Message for what move was used
+            let f = format!("{} used {}!", &player_monster, monsters_map[&player_monster].moves[current_choice as usize].name);
+            battle::better_draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+            // Apply the damage internally and to the drawing
+            let d = monster::calculate_damage(&mut battle_state, current_choice as usize);
+            battle_draw.apply_enemy_damage(d);
+
+            // Check effectiveness, and message based upon it
+            let effectiveness = monster::str_effectiveness(
+              &monsters_map[&player_monster].moves[current_choice as usize].attack_type,
+              &monsters_map[&enemy_monster].monster_type, 
+            );
+            match effectiveness {
+              Some(s) => {
+                thread::sleep(Duration::from_millis(200));
+                battle::better_draw_battle(wincan, &battle_draw, None, Some(s))?;
+              },
+              None => {
+                battle::better_draw_battle(wincan, &battle_draw, None, None)?;
+              }
+            }
+
+            thread::sleep(Duration::from_millis(200));
+            
+            if battle_draw.enemy_health == 0.0 {
+              // Write message that enemy is KO'd
+              let f = format!("{} KO'd {}!", &player_monster, &enemy_monster);
+              battle::better_draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+              // Fade out back to the overworld
+              let screen = Rect::new(0, 0, CAM_W, CAM_H);
+              wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
+              for _i in 0..50 {
+                wincan.fill_rect(screen)?;
+                wincan.present();
+              }
+              loaded_map = Map::Overworld;
+              
+              continue;
+            }
+
+            // Change to AI's turn
+            battle_state.player_turn = !battle_state.player_turn;
+
+            let f = format!("The AI for the enemy {} has not been implemented yet!", &enemy_monster);
+            battle::better_draw_battle(wincan, &battle_draw, None, Some(f))?;
+            
+            // TODO Have NPC choose a random move and have it attack the player
+            // let d = monster::calculate_damage(&mut battle_state, current_choice as usize);
+            battle_draw.apply_player_damage(0.0);
+            battle::better_draw_battle(wincan, &battle_draw, None, None)?;
+
+            thread::sleep(Duration::from_millis(50));
+
+            // Change to player's turn
+            battle_state.player_turn = !battle_state.player_turn;
+          } else {
+            let f = format!("The AI for the enemy {} has not been implemented yet!", &enemy_monster);
+            battle::better_draw_battle(wincan, &battle_draw, None, Some(f))?;
+            
+            // TODO Have NPC choose a random move and have it attack the player
+            // let d = monster::calculate_damage(&mut battle_state, current_choice as usize);
+            battle_draw.apply_player_damage(0.0);
+            battle::better_draw_battle(wincan, &battle_draw, None, None)?;
+            thread::sleep(Duration::from_millis(200));
+
+            // Change to player's turn
+            battle_state.player_turn = !battle_state.player_turn;
+
+            // Message for what move was used
+            let f = format!("{} used {}!", &player_monster, monsters_map[&player_monster].moves[current_choice as usize].name);
+            battle::better_draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+            // Apply the damage internally and to the drawing
+            let d = monster::calculate_damage(&mut battle_state, current_choice as usize);
+            battle_draw.apply_enemy_damage(d);
+
+            battle::better_draw_battle(wincan, &battle_draw, None, None)?;
+            thread::sleep(Duration::from_millis(50));
+
+            // Check effectiveness, and message based upon it
+            let effectiveness = monster::str_effectiveness(
+              &monsters_map[&player_monster].moves[current_choice as usize].attack_type,
+              &monsters_map[&enemy_monster].monster_type, 
+            );
+            match effectiveness {
+              Some(s) => {
+                thread::sleep(Duration::from_millis(200));
+                battle::better_draw_battle(wincan, &battle_draw, None, Some(s))?;
+              },
+              None => {
+                battle::better_draw_battle(wincan, &battle_draw, None, None)?;
+              }
+            }
+          
+            if battle_draw.enemy_health == 0.0 {
+              // Write message that enemy is KO'd
+              let f = format!("{} KO'd {}!", &player_monster, &enemy_monster);
+              battle::better_draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+              // Fade out back to the overworld
+              let screen = Rect::new(0, 0, CAM_W, CAM_H);
+              wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
+              for _i in 0..50 {
+                wincan.fill_rect(screen)?;
+                wincan.present();
+              }
+              loaded_map = Map::Overworld;
+
+              // Reset enemy health
+              battle_draw.enemy_health = 100.0;
+              continue;
+            }
+            battle_state.player_turn = !battle_state.player_turn;
           }
         }
         if selection_buffer > 0 {
