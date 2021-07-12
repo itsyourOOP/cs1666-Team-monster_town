@@ -24,6 +24,8 @@ use std::thread;
 
 use rand::{self, Rng};
 
+use rand::thread_rng;
+
 const TITLE: &str = "Monster Town Week 3";
 const TILE_SIZE: u32 = 16;
 
@@ -70,6 +72,28 @@ fn check_collision(a: &Rect, b: &Rect) -> bool {
 fn _select_random_monster<'a>(keys: &Vec<&String>) -> usize {
   return rand::thread_rng().gen_range(0..keys.len())
 }
+
+
+fn check_within(small: &Rect, large: &Rect) -> bool {
+  if small.left() > large.left() && small.right() < large.right() && small.top() > large.top() 
+    && small.top() > large.top() && small.bottom() < large.bottom() {
+      true
+    } else {
+      false
+    }
+}
+
+fn random_spawn() -> bool{
+  let mut rng = thread_rng();
+  let ran = rng.gen_range(0..200);
+  if ran == 2 {
+    true
+  } else {
+    false
+  }
+}
+
+
 
 pub fn init(
   title: &str,
@@ -241,6 +265,16 @@ fn run(
         wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
         
         overworld::draw_overworld(wincan)?;
+        let spawnable_areas = overworld::mark_rectangles();
+        //let test = &spawnable_areas[0].x();
+        // iterate over the spawnable rectangles 
+        /*for i in &spawnable_areas{
+          let test_result = check_within(&Rect::new(100,120,1,1),i);
+          println!("{:?}",test_result);
+          if test_result == true && random_spawn() {
+            break;
+          }
+        }*/
 
         // Create the Town Gym
         let gym_1_box = Rect::new(340, 100, 150, 150);
@@ -349,6 +383,42 @@ fn run(
           player_box.set_y(player_box.y() - y_vel);
         }
 
+        for i in &spawnable_areas{
+          let test_result = check_within(&player_box,i);
+          //println!("{:?}",test_result);
+          if test_result == true && random_spawn() {
+            let screen = Rect::new(0, 0, CAM_W, CAM_H);
+          wincan.copy(player.texture(), None, player_box)?;
+
+          wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
+          for _i in 0..50 {
+            wincan.fill_rect(screen)?;
+            wincan.present();
+          }
+          loaded_map = Map::Battle;
+
+          battle_draw.enemy_health = 100.0;
+
+          // ! Currently unable to change battle_draw traits
+          // TODO Change the battle_state and battle_draw based upon the team of the NPC
+
+          battle_state = monster::BattleState {
+            player_turn: monsters_map[&player_monster].attack_stat >= monsters_map[&enemy_monster].attack_stat,
+            player_monster: &monsters_map[&player_monster],
+            opp_monster: &monsters_map[&enemy_monster],
+            self_attack_stages: 0,
+            self_defense_stages: 0,
+            opp_attack_stages: 0,
+            opp_defense_stages: 0,
+          };
+
+          player_box.set_x(player_box.x() - x_vel);
+          player_box.set_y(player_box.y() - y_vel);
+                  
+          break;
+          }
+        }
+
         // Check for collision between player and gyms as well as cam bounds
         // Use the "go-back" approach to collision resolution
         if check_collision(&player_box, &npc_static_box1)
@@ -361,8 +431,8 @@ fn run(
           || check_collision(&player_box, &npc2_box)
           || check_collision(&player_box, &npc3_box)
         {
-          player_box.set_x(player_box.x() - x_vel);
-          player_box.set_y(player_box.y() - y_vel);
+          player_box.set_x(player_box.x() - 20);
+          player_box.set_y(player_box.y() - 20);
           x_vel = 0;
           y_vel = 0;
 

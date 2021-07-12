@@ -1,6 +1,6 @@
 extern crate rand;
 
-use std::collections::HashMap;
+//use std::collections::HashMap;
 
 //use sdl2::event::Event;
 use sdl2::image::LoadTexture;
@@ -196,4 +196,34 @@ pub fn draw_overworld(wincan: &mut sdl2::render::WindowCanvas) -> Result<(), Str
   }
 
   Ok(())
+}
+
+pub fn mark_rectangles() -> Vec<Rect>{
+  let mut spn_rectangles = Vec::new();
+  // Top left corner of the grass patches
+  let left_corner_grass = Rect::new((6*TILE_SIZE) as i32, 96, 2*TILE_SIZE*7, 2*TILE_SIZE*4);
+  spn_rectangles.push(left_corner_grass);
+  // A pond to the right bottom corner of map
+  let right_bottom_pond = Rect::new((48*TILE_SIZE) as i32, 480, 2*TILE_SIZE*10, 2*TILE_SIZE*4);
+  spn_rectangles.push(right_bottom_pond);
+  // Rock patches to right upper corner of map
+  let right_upper_rock = Rect::new((60*TILE_SIZE) as i32, 66, 2*TILE_SIZE*9, 2*TILE_SIZE*5);
+  spn_rectangles.push(right_upper_rock);
+  // Large grass patches to north of map
+  let north_grass = Rect::new((32*TILE_SIZE) as i32, 96, 2*TILE_SIZE*10, 2*TILE_SIZE*4);
+  spn_rectangles.push(north_grass);
+  // Grass patches to the south of map
+  let south_grass = Rect::new((32*TILE_SIZE) as i32, 480, 2*TILE_SIZE*7, 2*TILE_SIZE*4);
+  spn_rectangles.push(south_grass);
+  // Grass patches to the center right of map
+  let center_right_grass = Rect::new((62*TILE_SIZE) as i32, 300, 2*TILE_SIZE*8, 2*TILE_SIZE*4);
+  spn_rectangles.push(center_right_grass);
+  // A pond to the middle center left of map
+  let center_left_pond = Rect::new((4*TILE_SIZE) as i32, 280, 2*TILE_SIZE*8, 2*TILE_SIZE*4);
+  spn_rectangles.push(center_left_pond);
+  // Small grass patches in the center of the map
+  let center_grass = Rect::new((24*TILE_SIZE) as i32, 280, 2*TILE_SIZE*6, 2*TILE_SIZE*4);
+  spn_rectangles.push(center_grass);
+
+  return spn_rectangles;
 }
