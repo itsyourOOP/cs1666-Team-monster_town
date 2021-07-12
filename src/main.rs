@@ -23,6 +23,7 @@ use std::time::Duration;
 use std::thread;
 
 use rand::{self, Rng};
+
 use rand::thread_rng;
 
 const TITLE: &str = "Monster Town Week 3";
@@ -72,6 +73,7 @@ fn _select_random_monster<'a>(keys: &Vec<&String>) -> usize {
   return rand::thread_rng().gen_range(0..keys.len())
 }
 
+
 fn check_within(small: &Rect, large: &Rect) -> bool {
   if small.left() > large.left() && small.right() < large.right() && small.top() > large.top() 
     && small.top() > large.top() && small.bottom() < large.bottom() {
@@ -90,6 +92,7 @@ fn random_spawn() -> bool{
     false
   }
 }
+
 
 
 pub fn init(
