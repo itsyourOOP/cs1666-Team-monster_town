@@ -4,7 +4,7 @@ extern crate sdl2;
 mod battle;
 mod overworld;
 mod player;
-mod monster;
+pub mod monster;
 
 use monster::load_mons;
 use monster::load_moves;
@@ -26,7 +26,7 @@ use rand::{self, Rng};
 
 use rand::thread_rng;
 
-const TITLE: &str = "Monster Town Week 3";
+const TITLE: &str = "Monster Town Midterm";
 const TILE_SIZE: u32 = 16;
 
 // Camera
@@ -69,8 +69,9 @@ fn check_collision(a: &Rect, b: &Rect) -> bool {
   }
 }
 
-fn _select_random_monster<'a>(keys: &Vec<&String>) -> usize {
-  return rand::thread_rng().gen_range(0..keys.len())
+fn select_random_monster<'a>(keys: &Vec<String>) -> String {
+  let a = &keys[rand::thread_rng().gen_range(0..keys.len())];
+  return a.clone();
 }
 
 
@@ -147,50 +148,38 @@ fn run(
 
   let mut loaded_map = Map::Battle;
 
-  let player_monster = String::from("deer pokemon");
-  let enemy_monster = String::from("melon-mon");
+  let mut player_monster = String::from("deer pokemon");
+  let mut enemy_monster = String::from("melon-mon");
 
   let moves_map = load_moves();
   let monsters_map = load_mons(&moves_map);
 
-  let pi = format!("images/{}.png", player_monster);
-  let ei = format!("images/{}.png", enemy_monster);
-
-  let player_texture = texture_creator.load_texture(pi)?;
-  let enemy_texture = texture_creator.load_texture(ei)?;
   let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
   let font_path = Path::new(r"./fonts/framd.ttf");
   let font = ttf_context.load_font(font_path, 256)?;
 
-  let player_moves = monsters_map[&player_monster].moves
-    .iter()
-    .map(|d| d.name.clone())
-    .collect::<Vec<String>>();
+  let all_moves = moves_map.keys().map(|d| String::from(d)).collect::<Vec<String>>();
+  let all_effects = moves_map.values().map(|d| String::from(d.effect.clone())).collect::<Vec<String>>();
+  let all_monsters = monsters_map.keys().map(|d| String::from(d)).collect::<Vec<String>>();
 
-  let player_e = monsters_map[&player_monster].moves
-    .iter()
-    .map(|d| d.effect.clone())
-    .collect::<Vec<String>>();
-
-  let (attacks, effects) =
-    battle::create_attack_tuples(&texture_creator, &font, &player_moves, &player_e)?;
-
-  let (player_name_tup, enemy_name_tup) =
-    battle::create_name_tuples(&texture_creator, &font, &player_monster, &enemy_monster)?;
+  let move_textures = battle::create_all_attack_textures(&texture_creator, &font, &all_moves)?;
+  let effect_textures = battle::create_all_effect_textures(&texture_creator, &font, &all_effects)?;
+  let names_tup = battle::create_all_name_tuples(&texture_creator, &font, &all_monsters)?;
+  let monster_textures = battle::create_all_monster_textures(&texture_creator, &all_monsters)?;
 
   let mut battle_draw = battle::Battle {
-    player_name: &player_monster,
-    enemy_name: &enemy_monster,
-    player_name_texture: &player_name_tup,
-    enemy_name_texture: &enemy_name_tup,
     background_texture: &battle_bg,
-    player_texture: &player_texture,
-    enemy_texture: &enemy_texture,
+    player_name: player_monster.clone(),
+    enemy_name: enemy_monster.clone(),
     font: &font,
-    player_attacks: &attacks,
-    player_attack_effects: &effects,
     player_health: 100.0,
     enemy_health: 100.0,
+    name_text_map: &names_tup,
+    attack_map: &move_textures,
+    effect_map: &effect_textures,
+    monster_text_map: &monster_textures,
+    monsters: &monsters_map,
+    moves: &moves_map,
   };
 
   let mut battle_state = monster::BattleState {
@@ -388,34 +377,35 @@ fn run(
           //println!("{:?}",test_result);
           if test_result == true && random_spawn() {
             let screen = Rect::new(0, 0, CAM_W, CAM_H);
-          wincan.copy(player.texture(), None, player_box)?;
+            wincan.copy(player.texture(), None, player_box)?;
 
-          wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
-          for _i in 0..50 {
-            wincan.fill_rect(screen)?;
-            wincan.present();
-          }
-          loaded_map = Map::Battle;
+            wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
+            for _i in 0..50 {
+              wincan.fill_rect(screen)?;
+              wincan.present();
+            }
+            loaded_map = Map::Battle;
 
-          battle_draw.enemy_health = 100.0;
+            battle_draw.enemy_health = 100.0;
 
-          // ! Currently unable to change battle_draw traits
-          // TODO Change the battle_state and battle_draw based upon the team of the NPC
+            enemy_monster = select_random_monster(&all_monsters);
 
-          battle_state = monster::BattleState {
-            player_turn: monsters_map[&player_monster].attack_stat >= monsters_map[&enemy_monster].attack_stat,
-            player_monster: &monsters_map[&player_monster],
-            opp_monster: &monsters_map[&enemy_monster],
-            self_attack_stages: 0,
-            self_defense_stages: 0,
-            opp_attack_stages: 0,
-            opp_defense_stages: 0,
-          };
+            battle_draw.enemy_name = enemy_monster.clone();
 
-          player_box.set_x(player_box.x() - x_vel);
-          player_box.set_y(player_box.y() - y_vel);
-                  
-          break;
+            battle_state = monster::BattleState {
+              player_turn: monsters_map[&player_monster].attack_stat >= monsters_map[&enemy_monster].attack_stat,
+              player_monster: &monsters_map[&player_monster],
+              opp_monster: &monsters_map[&enemy_monster],
+              self_attack_stages: 0,
+              self_defense_stages: 0,
+              opp_attack_stages: 0,
+              opp_defense_stages: 0,
+            };
+
+            player_box.set_x(player_box.x() - x_vel);
+            player_box.set_y(player_box.y() - y_vel);
+                    
+            break;
           }
         }
 
@@ -448,8 +438,8 @@ fn run(
 
           battle_draw.enemy_health = 100.0;
 
-          // ! Currently unable to change battle_draw traits
-          // TODO Change the battle_state and battle_draw based upon the team of the NPC
+          enemy_monster = select_random_monster(&all_monsters);
+          battle_draw.enemy_name = enemy_monster.clone();
 
           battle_state = monster::BattleState {
             player_turn: monsters_map[&player_monster].attack_stat >= monsters_map[&enemy_monster].attack_stat,
@@ -498,7 +488,7 @@ fn run(
       }
 
       Map::Battle => {
-        battle::better_draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
+        battle::draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
 
         if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
           if selection_buffer > 0 {
@@ -513,7 +503,7 @@ fn run(
               current_choice
             };
 
-            battle::better_draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
+            battle::draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
             selection_buffer = BUFFER_FRAMES;
             wincan.present();
           }
@@ -531,7 +521,7 @@ fn run(
               current_choice
             };
             selection_buffer = BUFFER_FRAMES;
-            battle::better_draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
+            battle::draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
           }
         }
         if keystate.contains(&Keycode::Return) {
@@ -539,7 +529,7 @@ fn run(
           if battle_state.player_turn {
             // Message for what move was used
             let f = format!("{} used {}!", &player_monster, monsters_map[&player_monster].moves[current_choice as usize].name);
-            battle::better_draw_battle(wincan, &battle_draw, None, Some(f))?;
+            battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
 
             // Apply the damage internally and to the drawing
             let d = monster::calculate_damage(&mut battle_state, current_choice as usize);
@@ -547,16 +537,17 @@ fn run(
 
             // Check effectiveness, and message based upon it
             let effectiveness = monster::str_effectiveness(
+              d,
               &monsters_map[&player_monster].moves[current_choice as usize].attack_type,
               &monsters_map[&enemy_monster].monster_type, 
             );
             match effectiveness {
               Some(s) => {
                 thread::sleep(Duration::from_millis(200));
-                battle::better_draw_battle(wincan, &battle_draw, None, Some(s))?;
+                battle::draw_battle(wincan, &battle_draw, None, Some(s))?;
               },
               None => {
-                battle::better_draw_battle(wincan, &battle_draw, None, None)?;
+                battle::draw_battle(wincan, &battle_draw, None, None)?;
               }
             }
 
@@ -565,7 +556,7 @@ fn run(
             if battle_draw.enemy_health == 0.0 {
               // Write message that enemy is KO'd
               let f = format!("{} KO'd {}!", &player_monster, &enemy_monster);
-              battle::better_draw_battle(wincan, &battle_draw, None, Some(f))?;
+              battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
 
               // Fade out back to the overworld
               let screen = Rect::new(0, 0, CAM_W, CAM_H);
@@ -583,25 +574,30 @@ fn run(
             battle_state.player_turn = !battle_state.player_turn;
 
             let f = format!("The AI for the enemy {} has not been implemented yet!", &enemy_monster);
-            battle::better_draw_battle(wincan, &battle_draw, None, Some(f))?;
+            battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
             
             // TODO Have NPC choose a random move and have it attack the player
             // let d = monster::calculate_damage(&mut battle_state, current_choice as usize);
             battle_draw.apply_player_damage(0.0);
-            battle::better_draw_battle(wincan, &battle_draw, None, None)?;
+            battle::draw_battle(wincan, &battle_draw, None, None)?;
 
             thread::sleep(Duration::from_millis(50));
+
+            if battle_draw.player_health == 0.0 {
+              // TODO Write logic that changes player pokemon when they are KO'd
+              player_monster = select_random_monster(&all_monsters);
+            }
 
             // Change to player's turn
             battle_state.player_turn = !battle_state.player_turn;
           } else {
             let f = format!("The AI for the enemy {} has not been implemented yet!", &enemy_monster);
-            battle::better_draw_battle(wincan, &battle_draw, None, Some(f))?;
+            battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
             
             // TODO Have NPC choose a random move and have it attack the player
             // let d = monster::calculate_damage(&mut battle_state, current_choice as usize);
             battle_draw.apply_player_damage(0.0);
-            battle::better_draw_battle(wincan, &battle_draw, None, None)?;
+            battle::draw_battle(wincan, &battle_draw, None, None)?;
             thread::sleep(Duration::from_millis(200));
 
             // Change to player's turn
@@ -609,34 +605,35 @@ fn run(
 
             // Message for what move was used
             let f = format!("{} used {}!", &player_monster, monsters_map[&player_monster].moves[current_choice as usize].name);
-            battle::better_draw_battle(wincan, &battle_draw, None, Some(f))?;
+            battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
 
             // Apply the damage internally and to the drawing
             let d = monster::calculate_damage(&mut battle_state, current_choice as usize);
             battle_draw.apply_enemy_damage(d);
 
-            battle::better_draw_battle(wincan, &battle_draw, None, None)?;
+            battle::draw_battle(wincan, &battle_draw, None, None)?;
             thread::sleep(Duration::from_millis(50));
 
             // Check effectiveness, and message based upon it
             let effectiveness = monster::str_effectiveness(
+              d,
               &monsters_map[&player_monster].moves[current_choice as usize].attack_type,
               &monsters_map[&enemy_monster].monster_type, 
             );
             match effectiveness {
               Some(s) => {
                 thread::sleep(Duration::from_millis(200));
-                battle::better_draw_battle(wincan, &battle_draw, None, Some(s))?;
+                battle::draw_battle(wincan, &battle_draw, None, Some(s))?;
               },
               None => {
-                battle::better_draw_battle(wincan, &battle_draw, None, None)?;
+                battle::draw_battle(wincan, &battle_draw, None, None)?;
               }
             }
           
             if battle_draw.enemy_health == 0.0 {
               // Write message that enemy is KO'd
               let f = format!("{} KO'd {}!", &player_monster, &enemy_monster);
-              battle::better_draw_battle(wincan, &battle_draw, None, Some(f))?;
+              battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
 
               // Fade out back to the overworld
               let screen = Rect::new(0, 0, CAM_W, CAM_H);
