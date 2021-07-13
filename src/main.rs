@@ -9,6 +9,7 @@ pub mod monster;
 use monster::load_mons;
 use monster::load_moves;
 use player::Player;
+use battle::Map;
 
 use sdl2::event::Event;
 use sdl2::image::LoadTexture;
@@ -19,11 +20,8 @@ use sdl2::render::BlendMode;
 
 use std::collections::HashSet;
 use std::path::Path;
-use std::time::Duration;
-use std::thread;
 
 use rand::{self, Rng};
-
 use rand::thread_rng;
 
 const TITLE: &str = "Monster Town Midterm";
@@ -40,12 +38,7 @@ const ACCEL_RATE: i32 = 1;
 
 const _SCALE_UP: i16 = 3;
 
-const BUFFER_FRAMES: u32 = 0;
-
-enum Map {
-  Overworld,
-  Battle,
-}
+const BUFFER_FRAMES: u32 = 10;
 
 fn resist(vel: i32, deltav: i32) -> i32 {
   if deltav == 0 {
@@ -527,128 +520,56 @@ fn run(
         if keystate.contains(&Keycode::Return) {
           // Battle Logic
           if battle_state.player_turn {
-            // Message for what move was used
-            let f = format!("{} used {}!", &player_monster, monsters_map[&player_monster].moves[current_choice as usize].name);
-            battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
-
-            // Apply the damage internally and to the drawing
-            let d = monster::calculate_damage(&mut battle_state, current_choice as usize);
-            battle_draw.apply_enemy_damage(d);
-
-            // Check effectiveness, and message based upon it
-            let effectiveness = monster::str_effectiveness(
-              d,
-              &monsters_map[&player_monster].moves[current_choice as usize].attack_type,
-              &monsters_map[&enemy_monster].monster_type, 
-            );
-            match effectiveness {
-              Some(s) => {
-                thread::sleep(Duration::from_millis(200));
-                battle::draw_battle(wincan, &battle_draw, None, Some(s))?;
-              },
-              None => {
-                battle::draw_battle(wincan, &battle_draw, None, None)?;
+            match battle::player_battle_turn(wincan, &mut battle_state, &mut battle_draw, &monsters_map, current_choice as usize)? {
+              Map::Overworld => { 
+                loaded_map = Map::Overworld;
+                continue;
               }
+              _ => {}
             }
-
-            thread::sleep(Duration::from_millis(200));
-            
-            if battle_draw.enemy_health == 0.0 {
-              // Write message that enemy is KO'd
-              let f = format!("{} KO'd {}!", &player_monster, &enemy_monster);
-              battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
-
-              // Fade out back to the overworld
-              let screen = Rect::new(0, 0, CAM_W, CAM_H);
-              wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
-              for _i in 0..50 {
-                wincan.fill_rect(screen)?;
-                wincan.present();
-              }
-              loaded_map = Map::Overworld;
-              
-              continue;
-            }
-
             // Change to AI's turn
             battle_state.player_turn = !battle_state.player_turn;
-
-            let f = format!("The AI for the enemy {} has not been implemented yet!", &enemy_monster);
-            battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
             
-            // TODO Have NPC choose a random move and have it attack the player
-            // let d = monster::calculate_damage(&mut battle_state, current_choice as usize);
-            battle_draw.apply_player_damage(0.0);
-            battle::draw_battle(wincan, &battle_draw, None, None)?;
+            match battle::enemy_battle_turn(wincan, &mut battle_state, &mut battle_draw, &monsters_map)? {
+              Map::Overworld => { 
+                loaded_map = Map::Overworld;
 
-            thread::sleep(Duration::from_millis(50));
-
-            if battle_draw.player_health == 0.0 {
-              // TODO Write logic that changes player pokemon when they are KO'd
-              player_monster = select_random_monster(&all_monsters);
+                // Have the player spawn at the hospital with full health
+                player_box.set_x(112);
+                player_box.set_y(604);
+                battle_draw.player_health = 100.0;
+                continue;
+              }
+              _ => {}
             }
-
+            
             // Change to player's turn
             battle_state.player_turn = !battle_state.player_turn;
           } else {
-            let f = format!("The AI for the enemy {} has not been implemented yet!", &enemy_monster);
-            battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
-            
-            // TODO Have NPC choose a random move and have it attack the player
-            // let d = monster::calculate_damage(&mut battle_state, current_choice as usize);
-            battle_draw.apply_player_damage(0.0);
-            battle::draw_battle(wincan, &battle_draw, None, None)?;
-            thread::sleep(Duration::from_millis(200));
+            match battle::enemy_battle_turn(wincan, &mut battle_state, &mut battle_draw, &monsters_map)? {
+              Map::Overworld => { 
+                loaded_map = Map::Overworld;
+                // Have the player spawn at the hospital with full health
+                player_box.set_x(112);
+                player_box.set_y(604);
+                battle_draw.player_health = 100.0;
+                continue;
+              }
+              _ => {}
+            }
 
             // Change to player's turn
             battle_state.player_turn = !battle_state.player_turn;
-
-            // Message for what move was used
-            let f = format!("{} used {}!", &player_monster, monsters_map[&player_monster].moves[current_choice as usize].name);
-            battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
-
-            // Apply the damage internally and to the drawing
-            let d = monster::calculate_damage(&mut battle_state, current_choice as usize);
-            battle_draw.apply_enemy_damage(d);
-
-            battle::draw_battle(wincan, &battle_draw, None, None)?;
-            thread::sleep(Duration::from_millis(50));
-
-            // Check effectiveness, and message based upon it
-            let effectiveness = monster::str_effectiveness(
-              d,
-              &monsters_map[&player_monster].moves[current_choice as usize].attack_type,
-              &monsters_map[&enemy_monster].monster_type, 
-            );
-            match effectiveness {
-              Some(s) => {
-                thread::sleep(Duration::from_millis(200));
-                battle::draw_battle(wincan, &battle_draw, None, Some(s))?;
-              },
-              None => {
-                battle::draw_battle(wincan, &battle_draw, None, None)?;
+            match battle::player_battle_turn(wincan, &mut battle_state, &mut battle_draw, &monsters_map, current_choice as usize)? {
+              Map::Overworld => { 
+                loaded_map = Map::Overworld;
+                continue;
               }
+              _ => {}
             }
-          
-            if battle_draw.enemy_health == 0.0 {
-              // Write message that enemy is KO'd
-              let f = format!("{} KO'd {}!", &player_monster, &enemy_monster);
-              battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
-
-              // Fade out back to the overworld
-              let screen = Rect::new(0, 0, CAM_W, CAM_H);
-              wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
-              for _i in 0..50 {
-                wincan.fill_rect(screen)?;
-                wincan.present();
-              }
-              loaded_map = Map::Overworld;
-
-              // Reset enemy health
-              battle_draw.enemy_health = 100.0;
-              continue;
-            }
+            // Change to AI's turn
             battle_state.player_turn = !battle_state.player_turn;
+
           }
         }
         if selection_buffer > 0 {

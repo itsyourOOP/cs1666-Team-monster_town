@@ -7,7 +7,14 @@ use std::time::Duration;
 use std::thread;
 use std::collections::HashMap;
 
+use rand::{self, Rng};
+
 use crate::monster;
+
+pub enum Map {
+	Overworld,
+	Battle,
+}
 
 const CAM_W: u32 = 1280;
 const CAM_H: u32 = 720;
@@ -338,4 +345,117 @@ fn message_box<'a>(
         wincan.present();
     }
     Ok(())
+}
+
+pub fn player_battle_turn(
+    wincan: &mut sdl2::render::WindowCanvas, 
+    battle_state: &mut monster::BattleState,
+    battle_draw: &mut Battle,
+    monsters_map: &HashMap<String, monster::Monster>,
+    current_choice: usize,
+) -> Result<Map, String> {
+
+    let enemy_monster = battle_draw.enemy_name.clone();
+    let player_monster = battle_draw.player_name.clone();
+
+    // Message for what move was used
+    let f = format!("{} used {}!", &player_monster, monsters_map[&player_monster].moves[current_choice].name);
+    draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+    // Apply the damage internally and to the drawing
+    let d = monster::calculate_damage(battle_state, current_choice);
+    battle_draw.apply_enemy_damage(d);
+
+    // Check effectiveness, and message based upon it
+    let effectiveness = monster::str_effectiveness(
+      d,
+      &monsters_map[&player_monster].moves[current_choice].attack_type,
+      &monsters_map[&enemy_monster].monster_type, 
+    );
+    match effectiveness {
+      Some(s) => {
+        thread::sleep(Duration::from_millis(200));
+        draw_battle(wincan, &battle_draw, None, Some(s))?;
+      },
+      None => {
+        draw_battle(wincan, &battle_draw, None, None)?;
+      }
+    }
+
+    thread::sleep(Duration::from_millis(200));
+    
+    if battle_draw.enemy_health == 0.0 {
+      // Write message that enemy is KO'd
+      let f = format!("{} KO'd {}!", &player_monster, &enemy_monster);
+      draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+      // Fade out back to the overworld
+      let screen = Rect::new(0, 0, CAM_W, CAM_H);
+      wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
+      for _i in 0..50 {
+        wincan.fill_rect(screen)?;
+        wincan.present();
+      }
+      return Ok( Map::Overworld );
+    }
+    Ok( Map::Battle )
+}
+
+pub fn enemy_battle_turn(
+    wincan: &mut sdl2::render::WindowCanvas, 
+    battle_state: &mut monster::BattleState,
+    battle_draw: &mut Battle,
+    monsters_map: &HashMap<String, monster::Monster>,
+) -> Result<Map, String> {
+
+    let enemy_monster = battle_draw.enemy_name.clone();
+    let player_monster = battle_draw.player_name.clone();
+
+    let enemy_choice = rand::thread_rng().gen_range(0..4) as usize;
+
+    // Message for what move was used
+    let f = format!("{} used {}!", &enemy_monster, monsters_map[&enemy_monster].moves[enemy_choice].name);
+    draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+    // Apply the damage internally and to the drawing
+    let d = monster::calculate_damage(battle_state, enemy_choice);
+    battle_draw.apply_player_damage(d);
+
+    // Check effectiveness, and message based upon it
+    let effectiveness = monster::str_effectiveness(
+      d,
+      &monsters_map[&enemy_monster].moves[enemy_choice].attack_type,
+      &monsters_map[&player_monster].monster_type, 
+    );
+    match effectiveness {
+      Some(s) => {
+        thread::sleep(Duration::from_millis(200));
+        draw_battle(wincan, &battle_draw, None, Some(s))?;
+      },
+      None => {
+        draw_battle(wincan, &battle_draw, None, None)?;
+      }
+    }
+
+    thread::sleep(Duration::from_millis(200));
+    
+    if battle_draw.player_health == 0.0 {
+      // Write message that player is KO'd
+      let f = format!("{} KO'd {}!", &enemy_monster, &player_monster);
+      draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+      let f = format!("You blacked out!");
+      draw_battle(wincan, &battle_draw, None, Some(f))?;
+      thread::sleep(Duration::from_millis(150));
+
+      // Fade out back to the overworld
+      let screen = Rect::new(0, 0, CAM_W, CAM_H);
+      wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
+      for _i in 0..50 {
+        wincan.fill_rect(screen)?;
+        wincan.present();
+      }
+      return Ok( Map::Overworld );
+    }
+    Ok( Map::Battle )
 }
