@@ -3,4 +3,4 @@ Reusoon,95,55,Normal,Stare Down,Battle Cry,Tail Attack,Indecision
 Chromacat,65,85,Normal,Stare Down,Battle Cry,Wing Flap,Seed Pistol
 melon-mon,75,60,Grass,Seed Pistol,Indecision,Indecision,Indecision
 deer pokemon,85,75,Flying,Wing Flap,Soar,Windy Wind-up,Stare Down
-orcaaa,95,120,Water Waves,Battle Cry,Water Wrath,Indecision
+orcaaa,95,120,Water,Water Waves,Battle Cry,Water Wrath,Indecision
