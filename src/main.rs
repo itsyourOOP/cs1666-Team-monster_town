@@ -146,7 +146,7 @@ fn run(
   
   wincan.set_blend_mode(BlendMode::Blend);
 
-  let mut loaded_map = Map::Battle;
+  let mut loaded_map = Map::Overworld;
 
   let mut player_monster = String::from("deer pokemon");
   let mut enemy_monster = String::from("melon-mon");
