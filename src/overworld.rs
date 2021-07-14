@@ -23,6 +23,7 @@ pub fn draw_overworld(wincan: &mut sdl2::render::WindowCanvas) -> Result<(), Str
   //let background_image = texture_creator.load_texture("images/MapHolder.png")?;
 
   // Texture
+
   let tree_sheet = texture_creator.load_texture("images/tree.png")?;
   let grass_sheet = texture_creator.load_texture("images/grass_patch_32.png")?;
   let water_sheet = texture_creator.load_texture("images/water_patch_32.png")?;
@@ -217,9 +218,6 @@ pub fn display_menu(wincan: &mut sdl2::render::WindowCanvas, player_x: i32, play
   Ok(())
 }
 
-//pub fn disable_menu(wincan: &mut sdl2::render::WindowCanvas, player_x: i32, player_y: i32) -> Result<(), String>{
-
-//}
 
 pub fn mark_rectangles() -> Vec<Rect>{
   let mut spn_rectangles = Vec::new();
