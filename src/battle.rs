@@ -1,16 +1,20 @@
-//use std::time::Duration;
-//use std::thread;
-//use std::collections::HashSet;
-
 use sdl2::pixels::Color;
 use sdl2::render::TextureQuery;
+use sdl2::image::LoadTexture;
+use sdl2::rect::Rect;
 
 use std::time::Duration;
 use std::thread;
-//use sdl2::event::Event;
-//use sdl2::keyboard::Keycode;
+use std::collections::HashMap;
 
-use sdl2::rect::Rect;
+use rand::{self, Rng};
+
+use crate::monster;
+
+pub enum Map {
+	Overworld,
+	Battle,
+}
 
 const CAM_W: u32 = 1280;
 const CAM_H: u32 = 720;
@@ -38,107 +42,111 @@ fn fit(r1: Rect, w: u32, h: u32) -> Rect {
     Rect::new(r1.x(), r1.y(), (w as f32 *c) as u32, (h as f32 *c) as u32)
 }
 
-pub fn create_attack_tuples<'a, T>(
+pub fn create_all_attack_textures<'a, T>(
     texture_creator: &'a sdl2::render::TextureCreator<T>, 
     font: &'a sdl2::ttf::Font,
     attack_names: &'a Vec<String>,
-    attack_effects: &'a Vec<String>,
-) -> Result<(Vec<(sdl2::render::Texture<'a>, Rect)>, Vec<(sdl2::render::Texture<'a>, Rect)>), String> {
-    let rs: Vec<_> = (0..4)
-        .map(|i| 180 + i * (200 + 40))
-        .map(|i| Rect::new(i, 560 as i32, 200, 100))
-        .collect();
+) -> Result<HashMap<String, sdl2::render::Texture<'a>>, String> {
 
-    let mut attacks_tup = Vec::new();
-    let mut effects_tup = Vec::new();
+    let mut attacks_map = HashMap::new();
 
-    for (index, r) in rs.into_iter().enumerate() {
-        // Create a texture for the name of each attack
+    for item in attack_names.into_iter() {
         let surface = font
-            .render(&attack_names[index])
+            .render(item)
             .blended(Color::RGB(0xbd, 0xcd, 0xde))
             .map_err(|e| e.to_string())?;
         let texture = texture_creator
             .create_texture_from_surface(&surface)
             .map_err(|e| e.to_string())?;
 
-        // Figure out how to resize the text to fit within the provided space
-        let TextureQuery { width, height, .. } = texture.query();
-        let text_rect = Rect::new(r.x() + 10, r.y() + 5, 180, 50);
-        let text_rect = center(fit(text_rect, width, height), 180, 50);
-
-        // Return the tuple for later use
-        attacks_tup.push( (texture, text_rect) );
-
-        // Create a texture for the effect of each attack
-        let surface = font
-            .render(&attack_effects[index])
-            .blended(Color::RGB(0xbd, 0xcd, 0xde))
-            .map_err(|e| e.to_string())?;
-        let texture = texture_creator
-            .create_texture_from_surface(&surface)
-            .map_err(|e| e.to_string())?;
-
-        // Figure out how to resize the text to fit within the provided space
-        let TextureQuery { width, height, .. } = texture.query();
-        let text_rect = Rect::new(r.x() + 10, r.y() + 65, 180, 30);
-        let text_rect = center(fit(text_rect, width, height), 180, 30);
-
-        // Return the tuple for later use
-        effects_tup.push( (texture, text_rect) );
+        attacks_map.insert(item.clone(), texture);
     }
-    Ok((attacks_tup, effects_tup))
+
+    Ok( attacks_map )
 }
 
-pub fn create_name_tuples<'a, T>(
+pub fn create_all_effect_textures<'a, T>(
     texture_creator: &'a sdl2::render::TextureCreator<T>, 
     font: &'a sdl2::ttf::Font,
-    player_monster: &'a String,
-    enemy_monster: &'a String,
-) -> Result<((sdl2::render::Texture<'a>, Rect), (sdl2::render::Texture<'a>, Rect)), String> {
-    let surface = font
-        .render(&player_monster)
-        .blended(Color::BLACK)
-        .map_err(|e| e.to_string())?;
-    let player_texture = texture_creator
-        .create_texture_from_surface(&surface)
-        .map_err(|e| e.to_string())?;
+    attack_effects: &'a Vec<String>,
+) -> Result<HashMap<String, sdl2::render::Texture<'a>>, String> {
 
-    let TextureQuery { width, height, .. } = player_texture.query();
+    let mut attacks_map = HashMap::new();
 
-    let text_rect = Rect::new(500, 379, 300, 35);
-    let text_rect = fit(text_rect, width, height);
-    let player_rect = Rect::new(500 + (290 - text_rect.width() as i32) as i32, text_rect.y(), text_rect.width(), text_rect.height());
+    for item in attack_effects.into_iter() {
+        let surface = font
+            .render(item)
+            .blended(Color::RGB(0xbd, 0xcd, 0xde))
+            .map_err(|e| e.to_string())?;
+        let texture = texture_creator
+            .create_texture_from_surface(&surface)
+            .map_err(|e| e.to_string())?;
+
+        attacks_map.insert(item.clone(), texture);
+    }
+
+    Ok( attacks_map )
+}
+
+pub fn create_all_name_tuples<'a, T>(
+    texture_creator: &'a sdl2::render::TextureCreator<T>, 
+    font: &'a sdl2::ttf::Font,
+    monster_names: &'a Vec<String>,
+) -> Result<HashMap<String, (sdl2::render::Texture<'a>, Rect, Rect)>, String> {
     
-    let surface = font
-        .render(&enemy_monster)
-        .blended(Color::BLACK)
-        .map_err(|e| e.to_string())?;
-    let enemy_texture = texture_creator
-        .create_texture_from_surface(&surface)
-        .map_err(|e| e.to_string())?;
+    let mut monster_name_map = HashMap::new();
 
-    let TextureQuery { width, height, .. } = enemy_texture.query();
+    for item in monster_names.into_iter() {
+        let surface = font
+            .render(item)
+            .blended(Color::BLACK)
+            .map_err(|e| e.to_string())?;
+        let player_texture = texture_creator
+            .create_texture_from_surface(&surface)
+            .map_err(|e| e.to_string())?;
 
-    let text_rect = Rect::new(490, 88, 300, 35);
-    let enemy_rect = fit(text_rect, width, height);
+        let TextureQuery { width, height, .. } = player_texture.query();
 
-    Ok( ( (player_texture, player_rect), (enemy_texture, enemy_rect) ) )
+        let text_rect = Rect::new(500, 379, 300, 35);
+        let text_rect = fit(text_rect, width, height);
+        let player_rect = Rect::new(500 + (290 - text_rect.width() as i32) as i32, text_rect.y(), text_rect.width(), text_rect.height());
+    
+        let text_rect = Rect::new(490, 88, 300, 35);
+        let enemy_rect = fit(text_rect, width, height);
+
+        monster_name_map.insert(item.clone(), (player_texture, player_rect, enemy_rect));
+    }
+    Ok( monster_name_map )
+}
+
+pub fn create_all_monster_textures<'a, T>(
+    texture_creator: &'a sdl2::render::TextureCreator<T>, 
+    monster_names: &'a Vec<String>,
+) -> Result<HashMap<String, sdl2::render::Texture<'a>>, String> {
+    let mut monster_text_map = HashMap::new();
+    
+    for item in monster_names.into_iter() {
+        let im_path = format!("images/{}.png", item);
+        let temp_text = texture_creator.load_texture(im_path)?;
+        monster_text_map.insert(item.clone(), temp_text);
+    }
+
+    Ok( monster_text_map )
 }
 
 pub struct Battle<'a> {
-    pub player_name: &'a String,
-    pub enemy_name: &'a String,
-    pub player_name_texture: &'a (sdl2::render::Texture<'a>, Rect),
-    pub enemy_name_texture: &'a (sdl2::render::Texture<'a>, Rect),
     pub background_texture: &'a sdl2::render::Texture<'a>,
-    pub player_texture: &'a sdl2::render::Texture<'a>,
-    pub enemy_texture: &'a sdl2::render::Texture<'a>,
+    pub player_name: String,
+    pub enemy_name: String,
     pub font: &'a sdl2::ttf::Font<'a, 'a>,
-    pub player_attacks: &'a Vec<(sdl2::render::Texture<'a>, Rect)>,
-    pub player_attack_effects: &'a Vec<(sdl2::render::Texture<'a>, Rect)>,
     pub player_health: f32,
     pub enemy_health: f32,
+    pub name_text_map: &'a HashMap<String, (sdl2::render::Texture<'a>, Rect, Rect)>,
+    pub attack_map: &'a HashMap<String, sdl2::render::Texture<'a>>,
+    pub effect_map: &'a HashMap<String, sdl2::render::Texture<'a>>,
+    pub monster_text_map: &'a HashMap<String, sdl2::render::Texture<'a>>,
+    pub moves: &'a HashMap<String, monster::Move>,
+    pub monsters: &'a HashMap<String, monster::Monster<'a>>,
 }
 
 impl<'a> Battle<'a> {
@@ -152,10 +160,10 @@ impl<'a> Battle<'a> {
     }
 }
 
-pub fn better_draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle, choice: Option<usize>, message: Option<String>) -> Result<(), String> {
+pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle, choice: Option<usize>, message: Option<String>) -> Result<(), String> {
     // Load the battle scene background
     wincan.copy(&battle_init.background_texture, None, Rect::new(0,0,CAM_W,CAM_H))?;
-    
+
     let move_rects: Vec<_> = (0..4)
         .map(|i| 180 + i * (200 + 40))
         .map(|i| Rect::new(i, 560 as i32, 200, 100))
@@ -174,7 +182,6 @@ pub fn better_draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: 
         }
         None => {}
     };
-    
 
     // For all moves
     for (index, item) in move_rects.into_iter().enumerate()  {
@@ -183,20 +190,35 @@ pub fn better_draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: 
         wincan.set_draw_color(Color::RGB(0x20, 0x41, 0x6a));
         wincan.fill_rect(r)?;
 
+        let attack_name = &battle_init.monsters[&battle_init.player_name].moves[index].name;
+        let texture = &battle_init.attack_map[attack_name];
+        
         // Add the names of each attack
-        wincan.copy(&battle_init.player_attacks[index].0, None, battle_init.player_attacks[index].1)?;
-
-        // Add the names of each attack
-        wincan.copy(&battle_init.player_attack_effects[index].0, None, battle_init.player_attack_effects[index].1)?;
+        // Figure out how to resize the text to fit within the provided space
+        let TextureQuery { width, height, .. } = texture.query();
+        let text_rect = Rect::new(r.x() + 10, r.y() + 5, 180, 50);
+        let text_rect = center(fit(text_rect, width, height), 180, 50);
+        
+        wincan.copy(&texture, None, text_rect)?;
+        
+        let effect_name = &battle_init.monsters[&battle_init.player_name].moves[index].effect;
+        let texture = &battle_init.effect_map[effect_name];
+        
+        // Add the names of each effect
+        let TextureQuery { width, height, .. } = texture.query();
+        let text_rect = Rect::new(r.x() + 10, r.y() + 65, 180, 30);
+        let text_rect = center(fit(text_rect, width, height), 180, 30);
+        
+        wincan.copy(&texture, None, text_rect)?;
     }
 
     // Add the names of both monsters
-    wincan.copy(&battle_init.player_name_texture.0, None, battle_init.player_name_texture.1)?;
-    wincan.copy(&battle_init.enemy_name_texture.0, None, battle_init.enemy_name_texture.1)?;
+    wincan.copy(&battle_init.name_text_map[&battle_init.player_name].0, None, battle_init.name_text_map[&battle_init.player_name].1)?;
+    wincan.copy(&battle_init.name_text_map[&battle_init.enemy_name].0, None, battle_init.name_text_map[&battle_init.enemy_name].2)?;
 
     // Add both monsters
-    wincan.copy(&battle_init.player_texture, None, Rect::new(800,275,200,200))?;
-    wincan.copy_ex(&battle_init.enemy_texture, None, Rect::new(280 as i32,25 as i32,200,200), 0 as f64, None, true, false)?;
+    wincan.copy(&battle_init.monster_text_map[&battle_init.player_name], None, Rect::new(800,275,200,200))?;
+    wincan.copy_ex(&battle_init.monster_text_map[&battle_init.enemy_name], None, Rect::new(280 as i32,25 as i32,200,200), 0 as f64, None, true, false)?;
 
     // Calculate and add health bars for each monster
     health_bars(wincan, battle_init.player_health, battle_init.enemy_health)?;
@@ -220,7 +242,7 @@ pub fn better_draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: 
         let text_rect = fit(text_rect, width, height);
         wincan.copy(&texture, None, text_rect)?;
     }
-    
+
     // Print out a message if needed
     match message {
         Some(text) => {
@@ -236,8 +258,7 @@ pub fn better_draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: 
 }
 
 pub fn health_bars(wincan: &mut sdl2::render::WindowCanvas, player_health: f32, enemy_health: f32) -> Result<(), String> {
-    //let enemy_health: f32 = 12 as f32;
-
+    
     if enemy_health > 50 as f32{
         wincan.set_draw_color(Color::GREEN);
     } else if enemy_health > 20 as f32{
@@ -251,10 +272,6 @@ pub fn health_bars(wincan: &mut sdl2::render::WindowCanvas, player_health: f32, 
     let r2 = Rect::new(508, 54, ((enemy_health*435.0/100.0) as f32).ceil() as u32, 18);
     wincan.fill_rect(r2)?;
 
-    // let r2 = Rect::new(333, 429, 435, 18);
-
-    // let player_health: f32 = 51 as f32;
-
     if player_health > 50 as f32{
         wincan.set_draw_color(Color::GREEN);
     } else if player_health > 20 as f32{
@@ -267,8 +284,6 @@ pub fn health_bars(wincan: &mut sdl2::render::WindowCanvas, player_health: f32, 
 
     let r2 = Rect::new(333, 429, ((player_health*435.0/100.0) as f32).ceil() as u32, 18);
     wincan.fill_rect(r2)?;
-
-    // wincan.present();
 
     Ok(())
 }
@@ -330,4 +345,117 @@ fn message_box<'a>(
         wincan.present();
     }
     Ok(())
+}
+
+pub fn player_battle_turn(
+    wincan: &mut sdl2::render::WindowCanvas, 
+    battle_state: &mut monster::BattleState,
+    battle_draw: &mut Battle,
+    monsters_map: &HashMap<String, monster::Monster>,
+    current_choice: usize,
+) -> Result<Map, String> {
+
+    let enemy_monster = battle_draw.enemy_name.clone();
+    let player_monster = battle_draw.player_name.clone();
+
+    // Message for what move was used
+    let f = format!("{} used {}!", &player_monster, monsters_map[&player_monster].moves[current_choice].name);
+    draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+    // Apply the damage internally and to the drawing
+    let d = monster::calculate_damage(battle_state, current_choice);
+    battle_draw.apply_enemy_damage(d);
+
+    // Check effectiveness, and message based upon it
+    let effectiveness = monster::str_effectiveness(
+      d,
+      &monsters_map[&player_monster].moves[current_choice].attack_type,
+      &monsters_map[&enemy_monster].monster_type, 
+    );
+    match effectiveness {
+      Some(s) => {
+        thread::sleep(Duration::from_millis(200));
+        draw_battle(wincan, &battle_draw, None, Some(s))?;
+      },
+      None => {
+        draw_battle(wincan, &battle_draw, None, None)?;
+      }
+    }
+
+    thread::sleep(Duration::from_millis(200));
+    
+    if battle_draw.enemy_health == 0.0 {
+      // Write message that enemy is KO'd
+      let f = format!("{} KO'd {}!", &player_monster, &enemy_monster);
+      draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+      // Fade out back to the overworld
+      let screen = Rect::new(0, 0, CAM_W, CAM_H);
+      wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
+      for _i in 0..50 {
+        wincan.fill_rect(screen)?;
+        wincan.present();
+      }
+      return Ok( Map::Overworld );
+    }
+    Ok( Map::Battle )
+}
+
+pub fn enemy_battle_turn(
+    wincan: &mut sdl2::render::WindowCanvas, 
+    battle_state: &mut monster::BattleState,
+    battle_draw: &mut Battle,
+    monsters_map: &HashMap<String, monster::Monster>,
+) -> Result<Map, String> {
+
+    let enemy_monster = battle_draw.enemy_name.clone();
+    let player_monster = battle_draw.player_name.clone();
+
+    let enemy_choice = rand::thread_rng().gen_range(0..4) as usize;
+
+    // Message for what move was used
+    let f = format!("{} used {}!", &enemy_monster, monsters_map[&enemy_monster].moves[enemy_choice].name);
+    draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+    // Apply the damage internally and to the drawing
+    let d = monster::calculate_damage(battle_state, enemy_choice);
+    battle_draw.apply_player_damage(d);
+
+    // Check effectiveness, and message based upon it
+    let effectiveness = monster::str_effectiveness(
+      d,
+      &monsters_map[&enemy_monster].moves[enemy_choice].attack_type,
+      &monsters_map[&player_monster].monster_type, 
+    );
+    match effectiveness {
+      Some(s) => {
+        thread::sleep(Duration::from_millis(200));
+        draw_battle(wincan, &battle_draw, None, Some(s))?;
+      },
+      None => {
+        draw_battle(wincan, &battle_draw, None, None)?;
+      }
+    }
+
+    thread::sleep(Duration::from_millis(200));
+    
+    if battle_draw.player_health == 0.0 {
+      // Write message that player is KO'd
+      let f = format!("{} KO'd {}!", &enemy_monster, &player_monster);
+      draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+      let f = format!("You blacked out!");
+      draw_battle(wincan, &battle_draw, None, Some(f))?;
+      thread::sleep(Duration::from_millis(150));
+
+      // Fade out back to the overworld
+      let screen = Rect::new(0, 0, CAM_W, CAM_H);
+      wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
+      for _i in 0..50 {
+        wincan.fill_rect(screen)?;
+        wincan.present();
+      }
+      return Ok( Map::Overworld );
+    }
+    Ok( Map::Battle )
 }

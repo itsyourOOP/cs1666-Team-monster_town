@@ -1,9 +1,12 @@
 MoveName,damage,self_attack_stages,self_defense_stages,opp_attack_stages,opp_defense_stages,attack_type
-Leer,0,0,0,0,-1,Normal,Lowers opp. defense by 1
-Growl,0,0,0,-1,0,Normal,Lowers opp. attack by 1
-Wing Flap,50,0,0,0,0,Flying,Flap their wings and send out a tornado
-Seed Pistol,30,0,0,0,0,Grass,Shoot melon seeds to the enemy and attack their eyes
+Stare Down,0,0,0,0,-1,Normal,Lowers opp. defense by 1
+Battle Cry,0,0,0,-1,0,Normal,Lowers opp. attack by 1
+Wing Flap,50,0,0,0,0,Flying,Flap wings and send out a tornado
+Seed Pistol,30,0,0,0,0,Grass,Shoot melon seeds at their eyes
 Electric Shock,45,0,0,0,0,Electric,Send out electric waves 
-Tail Attack,30,0,0,0,0,Normal,Swing their tails to attack
+Tail Attack,30,0,0,0,0,Normal,Swing tails to attack
 Water Waves,40,0,0,0,0,Water,Shoot water streams with high energy
-[NULL ATTACK],0,0,0,0,0,Normal,[NOT IMPLEMENTED YET]
+Indecision,0,0,0,0,0,Normal,Do nothing
+Water Wrath,60,0,0,0,0,Water,Water overwhelms the enemy
+Soar,0,0,1,0,0,Flying,Flies up to reduce damage
+Windy Wind-up,0,1,0,0,0,Flying,Increases wind to boost attacks

@@ -80,8 +80,13 @@ pub fn load_mons<'a>(moves_map: &'a HashMap<String, Move>) -> HashMap<String, Mo
     mons
 }
 
-pub fn str_effectiveness(attack_type: &String, defense_type: &String) -> Option<String> {
+pub fn str_effectiveness(damage: f32, attack_type: &String, defense_type: &String) -> Option<String> {
     let a = type_effectiveness(attack_type, defense_type);
+
+    if damage == 0.0 {
+        return None;
+    }
+
     return if a == 2.0 {Some(String::from("It was super effective!"))}
     else if a == 0.5 {Some(String::from("It was not very effective."))}
     else {None};
