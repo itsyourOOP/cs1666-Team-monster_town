@@ -65,8 +65,6 @@ pub fn create_all_attack_textures<'a, T>(
     Ok( attacks_map )
 }
 
-
-
 pub fn create_all_effect_textures<'a, T>(
     texture_creator: &'a sdl2::render::TextureCreator<T>, 
     font: &'a sdl2::ttf::Font,
@@ -212,17 +210,6 @@ pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle
         let TextureQuery { width, height, .. } = texture.query();
         let text_rect = Rect::new(r.x() + 10, r.y() + 65, 180, 30);
         let text_rect = center(fit(text_rect, width, height), 180, 30);
-
-
-        let stat_name = &battle_init.monsters[&battle_init.player_name].moves[index].name;
-        let texture = &battle_init.attack_map[attack_name];
-        
-
-        //stats of each monster
-        let TextureQuery { width, height, .. } = stats.query();
-        let text_rect = Rect::new(r.x() + 10, r.y() + 200, 180, 30);
-
-
         
         wincan.copy(&texture, None, text_rect)?;
     }
