@@ -2,8 +2,8 @@ extern crate sdl2;
 
 // Modules
 mod battle;
-mod overworld;
-mod player;
+pub mod overworld;
+pub mod player;
 pub mod monster;
 
 use monster::load_mons;
@@ -20,6 +20,7 @@ use sdl2::render::BlendMode;
 
 use std::collections::HashSet;
 use std::path::Path;
+
 
 use rand::{self, Rng};
 use rand::thread_rng;
@@ -404,7 +405,7 @@ fn run(
 
         // Check for collision between player and gyms as well as cam bounds
         // Use the "go-back" approach to collision resolution
-        if check_collision(&player_box, &npc_static_box1)
+         if check_collision(&player_box, &npc_static_box1)
           || check_collision(&player_box, &npc_static_box2)
           || check_collision(&player_box, &npc_static_box3)
           || check_collision(&player_box, &npc_static_box4)
@@ -420,6 +421,12 @@ fn run(
           wincan.copy(npc_player3.texture(), None, npc3_box)?;
 
           overworld::display_menu(wincan,player_box.x(),player_box.y())?;
+
+
+
+
+
+
           if keystate.contains(&Keycode::F) {
 
             enemy_monster = select_random_monster(&all_monsters);
@@ -437,7 +444,40 @@ fn run(
 
             loaded_map = Map::Battle;
             battle_draw.enemy_health = 100.0;
+
+             wincan.present();
+
+             x_vel = 0;
+              y_vel = 0;
+
+            continue;
           }
+
+
+          //flashing not active when moving away
+
+        if keystate.contains(&Keycode::W) 
+        || keystate.contains(&Keycode::Up)   
+        || keystate.contains(&Keycode::A) 
+        || keystate.contains(&Keycode::Left) 
+        || keystate.contains(&Keycode::S) 
+        || keystate.contains(&Keycode::Down) 
+        || keystate.contains(&Keycode::D) 
+        || keystate.contains(&Keycode::Right)
+{
+         wincan.present();
+
+         x_vel = 0;
+          y_vel = 0;
+
+          continue;
+}
+
+
+    
+
+          //causes the flashing effect. Every time near npc, screen flashes 
+          wincan.present();
           wincan.present();
 
           x_vel = 0;
@@ -445,6 +485,9 @@ fn run(
 
           continue;
         }
+
+
+
 
         wincan.copy(player.texture(), None, player_box)?;
         
