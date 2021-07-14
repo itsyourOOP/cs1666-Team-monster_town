@@ -200,8 +200,8 @@ pub fn draw_overworld(wincan: &mut sdl2::render::WindowCanvas) -> Result<(), Str
 
 pub fn display_menu(wincan: &mut sdl2::render::WindowCanvas, player_x: i32, player_y: i32) -> Result<(), String>{
   let texture_creator = wincan.texture_creator();
-  let fight_tab = texture_creator.load_texture("images/Fight_tab.png")?;
-  let bail_tab = texture_creator.load_texture("images/pressF.png")?;
+  let fight_tab = texture_creator.load_texture("images/pressF.png")?;
+  let bail_tab = texture_creator.load_texture("images/bail.png")?;
 
   // Add the fight tab
   let src_f = Rect::new(0, 0, 128, 64);
