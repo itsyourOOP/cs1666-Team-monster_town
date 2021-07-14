@@ -23,7 +23,6 @@ pub fn draw_overworld(wincan: &mut sdl2::render::WindowCanvas) -> Result<(), Str
   //let background_image = texture_creator.load_texture("images/MapHolder.png")?;
 
   // Texture
-
   let tree_sheet = texture_creator.load_texture("images/tree.png")?;
   let grass_sheet = texture_creator.load_texture("images/grass_patch_32.png")?;
   let water_sheet = texture_creator.load_texture("images/water_patch_32.png")?;
@@ -197,6 +196,30 @@ pub fn draw_overworld(wincan: &mut sdl2::render::WindowCanvas) -> Result<(), Str
 
   Ok(())
 }
+
+pub fn display_menu(wincan: &mut sdl2::render::WindowCanvas, player_x: i32, player_y: i32) -> Result<(), String>{
+  let texture_creator = wincan.texture_creator();
+  let fight_tab = texture_creator.load_texture("images/Fight_tab.png")?;
+  let bail_tab = texture_creator.load_texture("images/pressF.png")?;
+
+  // Add the fight tab
+  let src_f = Rect::new(0, 0, 128, 64);
+  let pos_f = Rect::new(player_x - 20, player_y - 140, 128, 64);
+
+  wincan.copy(&fight_tab, src_f, pos_f)?;
+  
+  // Add the bail tab
+  let src_b = Rect::new(0, 0, 128, 64);
+  let pos_b = Rect::new(player_x - 20, player_y - 140 + 64, 128, 64);
+
+  wincan.copy(&bail_tab, src_b, pos_b)?;
+
+  Ok(())
+}
+
+//pub fn disable_menu(wincan: &mut sdl2::render::WindowCanvas, player_x: i32, player_y: i32) -> Result<(), String>{
+
+//}
 
 pub fn mark_rectangles() -> Vec<Rect>{
   let mut spn_rectangles = Vec::new();

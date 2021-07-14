@@ -5,6 +5,7 @@ mod battle;
 mod overworld;
 mod player;
 mod monster;
+//mod menu;
 
 use monster::load_mons;
 use monster::load_moves;
@@ -45,6 +46,7 @@ const BUFFER_FRAMES: u32 = 0;
 enum Map {
   Overworld,
   Battle,
+  //Menu,
 }
 
 fn resist(vel: i32, deltav: i32) -> i32 {
@@ -85,7 +87,7 @@ fn check_within(small: &Rect, large: &Rect) -> bool {
 
 fn random_spawn() -> bool{
   let mut rng = thread_rng();
-  let ran = rng.gen_range(0..200);
+  let ran = rng.gen_range(0..500);
   if ran == 2 {
     true
   } else {
@@ -142,6 +144,9 @@ fn run(
   let home = texture_creator.load_texture("images/home.png")?;
   let battle_bg = texture_creator.load_texture("images/battle_bg.png")?;
   let npc_static = texture_creator.load_texture("images/NPC_1.png")?;
+  //let choice_tab = texture_creator.load_texture("images/Option.png")?;
+  let fight_tab = texture_creator.load_texture("images/Fight_tab.png")?;
+  let bail_tab = texture_creator.load_texture("images/Bail_tab.png")?;
   
   wincan.set_blend_mode(BlendMode::Blend);
 
@@ -266,15 +271,6 @@ fn run(
         
         overworld::draw_overworld(wincan)?;
         let spawnable_areas = overworld::mark_rectangles();
-        //let test = &spawnable_areas[0].x();
-        // iterate over the spawnable rectangles 
-        /*for i in &spawnable_areas{
-          let test_result = check_within(&Rect::new(100,120,1,1),i);
-          println!("{:?}",test_result);
-          if test_result == true && random_spawn() {
-            break;
-          }
-        }*/
 
         // Create the Town Gym
         let gym_1_box = Rect::new(340, 100, 150, 150);
@@ -415,7 +411,7 @@ fn run(
           player_box.set_x(player_box.x() - x_vel);
           player_box.set_y(player_box.y() - y_vel);
                   
-          break;
+          continue;
           }
         }
 
@@ -431,36 +427,35 @@ fn run(
           || check_collision(&player_box, &npc2_box)
           || check_collision(&player_box, &npc3_box)
         {
-          player_box.set_x(player_box.x() - 20);
-          player_box.set_y(player_box.y() - 20);
+          wincan.copy(player.texture(), None, player_box)?;
+          wincan.copy(npc_player1.texture(), None, npc1_box)?;
+          wincan.copy(npc_player2.texture(), None, npc2_box)?;
+          wincan.copy(npc_player3.texture(), None, npc3_box)?;
+
+          overworld::display_menu(wincan,player_box.x(),player_box.y());
+          if keystate.contains(&Keycode::F) {
+            loaded_map = Map::Battle;
+            battle_draw.enemy_health = 100.0;
+          }
+          if keystate.contains(&Keycode::B) {
+            player_box.set_x(player_box.x() - x_vel);
+            player_box.set_y(player_box.y() - y_vel);
+          }
+          wincan.present();
+
+          //player_box.set_x(player_box.x() - 20);
+          //player_box.set_y(player_box.y() - 20);
           x_vel = 0;
           y_vel = 0;
 
-          let screen = Rect::new(0, 0, CAM_W, CAM_H);
-          wincan.copy(player.texture(), None, player_box)?;
+          /*let screen = Rect::new(0, 0, CAM_W, CAM_H);
 
           wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
           for _i in 0..50 {
             wincan.fill_rect(screen)?;
             wincan.present();
-          }
-          loaded_map = Map::Battle;
-
-          battle_draw.enemy_health = 100.0;
-
-          // ! Currently unable to change battle_draw traits
-          // TODO Change the battle_state and battle_draw based upon the team of the NPC
-
-          battle_state = monster::BattleState {
-            player_turn: monsters_map[&player_monster].attack_stat >= monsters_map[&enemy_monster].attack_stat,
-            player_monster: &monsters_map[&player_monster],
-            opp_monster: &monsters_map[&enemy_monster],
-            self_attack_stages: 0,
-            self_defense_stages: 0,
-            opp_attack_stages: 0,
-            opp_defense_stages: 0,
-          };
-                  
+          }*/
+          //loaded_map = Map::Menu;     
           continue;
         }
 
@@ -496,6 +491,29 @@ fn run(
 
         wincan.present();
       }
+
+      /*Map::Menu => {
+        //wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
+        wincan.set_blend_mode(BlendMode::Blend);
+        menu::display_menu(wincan)?;
+        wincan.present();
+
+        // get a mouse state
+        /*let state = events.mouse_state();
+
+        // Create a set of pressed Keys.
+        let buttons = state.pressed_mouse_buttons().collect();
+
+        // Get the difference between the new and old sets.
+        let new_buttons = &buttons - &prev_buttons;
+        let old_buttons = &prev_buttons - &buttons;
+
+        if !new_buttons.is_empty() || !old_buttons.is_empty() {
+           loaded_map = Map::
+        }
+
+        prev_buttons = buttons;*/
+      }*/
 
       Map::Battle => {
         battle::better_draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
