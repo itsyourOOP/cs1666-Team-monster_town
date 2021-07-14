@@ -425,6 +425,16 @@ fn run(
             enemy_monster = select_random_monster(&all_monsters);
             battle_draw.enemy_name = enemy_monster.clone();
 
+            battle_state = monster::BattleState {
+              player_turn: monsters_map[&player_monster].attack_stat >= monsters_map[&enemy_monster].attack_stat,
+              player_monster: &monsters_map[&player_monster],
+              opp_monster: &monsters_map[&enemy_monster],
+              self_attack_stages: 0,
+              self_defense_stages: 0,
+              opp_attack_stages: 0,
+              opp_defense_stages: 0,
+            };
+
             loaded_map = Map::Battle;
             battle_draw.enemy_health = 100.0;
           }
