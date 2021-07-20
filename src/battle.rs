@@ -176,7 +176,7 @@ pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle
     let switch_but = Rect::new(switch_x, 560 as i32, 200, 100);
 
     let mut move_and_switch_rects = move_rects.clone(); 
-    move_and_switch_rects.insert(5, switch_but);
+    move_and_switch_rects.insert(4, switch_but);
 
     // Create an outline around the move that is currently selected
     let outline_size = 5;
@@ -225,7 +225,7 @@ pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle
     wincan.set_draw_color(Color::RGB(0x20, 0x41, 0x6a));
     wincan.fill_rect(switch_but)?;
 
-    
+
 
 
     // Add the names of both monsters

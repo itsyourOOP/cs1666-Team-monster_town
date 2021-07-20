@@ -530,10 +530,10 @@ fn run(
             continue;
           } else {
             current_choice -= 1;
-            current_choice = if current_choice > 3 {
+            current_choice = if current_choice > 4 {
               0
             } else if current_choice < 0 {
-              3
+              4
             } else {
               current_choice
             };
@@ -548,10 +548,10 @@ fn run(
             continue;
           } else {
             current_choice += 1;
-            current_choice = if current_choice > 3 {
+            current_choice = if current_choice > 4 {
               0
             } else if current_choice < 0 {
-              3
+              4
             } else {
               current_choice
             };
