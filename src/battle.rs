@@ -221,6 +221,7 @@ pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle
         wincan.copy(&texture, None, text_rect)?;
     }
 
+<<<<<<< Updated upstream
     // do the same for the switch button
     wincan.set_draw_color(Color::RGB(0x20, 0x41, 0x6a));
     wincan.fill_rect(switch_but)?;
@@ -228,6 +229,8 @@ pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle
 
 
 
+=======
+>>>>>>> Stashed changes
     // Add the names of both monsters
     wincan.copy(&battle_init.name_text_map[&battle_init.player_name].0, None, battle_init.name_text_map[&battle_init.player_name].1)?;
     wincan.copy(&battle_init.name_text_map[&battle_init.enemy_name].0, None, battle_init.name_text_map[&battle_init.enemy_name].2)?;
