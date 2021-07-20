@@ -175,6 +175,7 @@ pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle
     let switch_x = 60 + 4 * (200 + 40);
     let switch_but = Rect::new(switch_x, 560 as i32, 200, 100);
 
+    // make a mutable copy of the move_rects vector and add the switch button 
     let mut move_and_switch_rects = move_rects.clone(); 
     move_and_switch_rects.insert(4, switch_but);
 
@@ -193,37 +194,61 @@ pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle
     };
 
     // For all moves
-    for (index, item) in move_rects.into_iter().enumerate()  {
+    for (index, item) in move_and_switch_rects.into_iter().enumerate()  {
         // Create the background for each move
         let r = item;
         wincan.set_draw_color(Color::RGB(0x20, 0x41, 0x6a));
         wincan.fill_rect(r)?;
 
-        let attack_name = &battle_init.monsters[&battle_init.player_name].moves[index].name;
-        let texture = &battle_init.attack_map[attack_name];
-        
-        // Add the names of each attack
-        // Figure out how to resize the text to fit within the provided space
-        let TextureQuery { width, height, .. } = texture.query();
-        let text_rect = Rect::new(r.x() + 10, r.y() + 5, 180, 50);
-        let text_rect = center(fit(text_rect, width, height), 180, 50);
-        
-        wincan.copy(&texture, None, text_rect)?;
-        
-        let effect_name = &battle_init.monsters[&battle_init.player_name].moves[index].effect;
-        let texture = &battle_init.effect_map[effect_name];
-        
-        // Add the names of each effect
-        let TextureQuery { width, height, .. } = texture.query();
-        let text_rect = Rect::new(r.x() + 10, r.y() + 65, 180, 30);
-        let text_rect = center(fit(text_rect, width, height), 180, 30);
-        
-        wincan.copy(&texture, None, text_rect)?;
+        match index {
+             4 => {
+                    let texture_creator = wincan.texture_creator();
+                    let s = "Switch monsters";
+                    let surface = battle_init.font
+                        .render(&s)
+                        .blended(Color::YELLOW)
+                        .map_err(|e| e.to_string())?;
+                    let texture = texture_creator
+                        .create_texture_from_surface(&surface)
+                        .map_err(|e| e.to_string())?;
+
+                    let TextureQuery { width, height, .. } = texture.query();
+
+                    let text_rect = Rect::new(r.x() + 10, r.y() + 5, 180, 50);
+                    let text_rect = center(fit(text_rect, width, height), 180, 50);
+                    wincan.copy(&texture, None, text_rect)?;
+            },
+            _ => {
+
+                    let attack_name = &battle_init.monsters[&battle_init.player_name].moves[index].name;
+                    let texture = &battle_init.attack_map[attack_name];
+                    
+                    // Add the names of each attack
+                    // Figure out how to resize the text to fit within the provided space
+                    let TextureQuery { width, height, .. } = texture.query();
+                    let text_rect = Rect::new(r.x() + 10, r.y() + 5, 180, 50);
+                    let text_rect = center(fit(text_rect, width, height), 180, 50);
+                    
+                    wincan.copy(&texture, None, text_rect)?;
+                    
+                    let effect_name = &battle_init.monsters[&battle_init.player_name].moves[index].effect;
+                    let texture = &battle_init.effect_map[effect_name];
+                    
+                    // Add the names of each effect
+                    let TextureQuery { width, height, .. } = texture.query();
+                    let text_rect = Rect::new(r.x() + 10, r.y() + 65, 180, 30);
+                    let text_rect = center(fit(text_rect, width, height), 180, 30);
+                    
+                    wincan.copy(&texture, None, text_rect)?;
+
+            }
+        }
+
     }
 
     // do the same for the switch button
-    wincan.set_draw_color(Color::RGB(0x20, 0x41, 0x6a));
-    wincan.fill_rect(switch_but)?;
+    //wincan.set_draw_color(Color::RGB(0x20, 0x41, 0x6a));
+    //wincan.fill_rect(switch_but)?;
 
 
 
