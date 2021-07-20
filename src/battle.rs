@@ -167,16 +167,23 @@ pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle
     wincan.copy(&battle_init.background_texture, None, Rect::new(0,0,CAM_W,CAM_H))?;
 
     let move_rects: Vec<_> = (0..4)
-        .map(|i| 180 + i * (200 + 40))
+        .map(|i| 60 + i * (200 + 40))
         .map(|i| Rect::new(i, 560 as i32, 200, 100))
         .collect();
+
+    // add the "switch mons" button
+    let switch_x = 60 + 4 * (200 + 40);
+    let switch_but = Rect::new(switch_x, 560 as i32, 200, 100);
+
+    let mut move_and_switch_rects = move_rects.clone(); 
+    move_and_switch_rects.insert(5, switch_but);
 
     // Create an outline around the move that is currently selected
     let outline_size = 5;
 
     match choice {
         Some(option) => {
-            let r = move_rects[option];
+            let r = move_and_switch_rects[option];
             let move_outline_rect = Rect::new(r.x() - outline_size, r.y() - outline_size, (r.width() + (2*outline_size)as u32) as u32, (r.height() + (2*outline_size)as u32) as u32);
 
             wincan.set_draw_color(Color::RGB(0xf6, 0x52, 0x41));
@@ -213,6 +220,13 @@ pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle
         
         wincan.copy(&texture, None, text_rect)?;
     }
+
+    // do the same for the switch button
+    wincan.set_draw_color(Color::RGB(0x20, 0x41, 0x6a));
+    wincan.fill_rect(switch_but)?;
+
+    
+
 
     // Add the names of both monsters
     wincan.copy(&battle_init.name_text_map[&battle_init.player_name].0, None, battle_init.name_text_map[&battle_init.player_name].1)?;
