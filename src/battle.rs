@@ -160,9 +160,12 @@ impl<'a> Battle<'a> {
     }
 }
 
-pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle, choice: Option<usize>, message: Option<String>) -> Result<(), String> {
-
-
+pub fn draw_battle(
+    wincan: &mut sdl2::render::WindowCanvas,
+    battle_init: &Battle,
+    choice: Option<usize>,
+    message: Option<String>,
+) -> Result<(), String> {
     // Load the battle scene background
     wincan.copy(&battle_init.background_texture, None, Rect::new(0,0,CAM_W,CAM_H))?;
 
@@ -177,7 +180,12 @@ pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle
     match choice {
         Some(option) => {
             let r = move_rects[option];
-            let move_outline_rect = Rect::new(r.x() - outline_size, r.y() - outline_size, (r.width() + (2*outline_size)as u32) as u32, (r.height() + (2*outline_size)as u32) as u32);
+            let move_outline_rect = Rect::new(
+                r.x() - outline_size,
+                r.y() - outline_size,
+                (r.width() + (2 * outline_size) as u32) as u32,
+                (r.height() + (2 * outline_size) as u32) as u32,
+            );
 
             wincan.set_draw_color(Color::RGB(0xf6, 0x52, 0x41));
             wincan.fill_rect(move_outline_rect)?;
@@ -186,7 +194,7 @@ pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle
     };
 
     // For all moves
-    for (index, item) in move_rects.into_iter().enumerate()  {
+    for (index, item) in move_rects.into_iter().enumerate() {
         // Create the background for each move
         let r = item;
         wincan.set_draw_color(Color::RGB(0x20, 0x41, 0x6a));
@@ -226,11 +234,21 @@ pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle
     health_bars(wincan, battle_init.player_health, battle_init.enemy_health)?;
 
     // FOR DEMO ONLY
-    let s = vec!["Demo Instructions:","Use AD/←→ to choose a move","Use Enter to submit your choice"];
+    let s = vec![
+        "Demo Instructions:",
+        "Use AD/←→ to choose a move",
+        "Use Enter to submit your choice",
+        "Use M to open the switching menu",
+        "   Use Enter to select a monster",
+        "   Select monster to switch with",
+        "   The first alive monster ",
+        "      will be placed in battle",
+    ];
     let texture_creator = wincan.texture_creator();
 
     for (index, item) in s.iter().enumerate() {
-        let surface = battle_init.font
+        let surface = battle_init
+            .font
             .render(&item)
             .blended(Color::BLACK)
             .map_err(|e| e.to_string())?;
@@ -250,7 +268,7 @@ pub fn draw_battle(wincan: &mut sdl2::render::WindowCanvas, battle_init: &Battle
         Some(text) => {
             message_box(wincan, battle_init.font, &text)?;
             thread::sleep(Duration::from_millis(MESSAGE_TIME));
-        },
+        }
         None => (),
     };
 
@@ -369,7 +387,7 @@ pub fn player_battle_turn(
     draw_battle(wincan, &battle_draw, None, Some(f))?;
 
     // Apply the damage internally and to the drawing
-    let d = monster::calculate_damage(battle_state, current_choice);
+    let d = monster::calculate_damage(battle_state, current_choice, true);
     battle_draw.apply_enemy_damage(d);
     battle_state.enemy_team[0].1 = battle_draw.enemy_health;
 
@@ -448,7 +466,7 @@ pub fn enemy_battle_turn(
     draw_battle(wincan, &battle_draw, None, Some(f))?;
 
     // Apply the damage internally and to the drawing
-    let d = monster::calculate_damage(battle_state, enemy_choice);
+    let d = monster::calculate_damage(battle_state, enemy_choice, false);
     battle_draw.apply_player_damage(d);
     battle_state.player_team[0].1 = battle_draw.player_health;
     
@@ -713,8 +731,6 @@ pub fn draw_monster_menu(
         let item = rects[index];
         if index < player_team.len() {
             let health = player_team[index].1;
-            println!("helth for {} = {}", player_team[index].0, health);
-            //let health = 10.0;
             let name_texture = &battle_init.name_text_map[&player_team[index].0].0;
             let TextureQuery { width, height, .. } = name_texture.query();
             let text_rect = Rect::new(item.x + 5, item.y + 5, item.width() - 10, 40);
@@ -771,4 +787,8 @@ pub fn verify_team(v: &Vec<(String, f32)>) -> Vec<(String, f32)>{
     }
     alive.append(&mut dead);
     return alive;
+}
+
+pub fn turn_calc<'a>(battle_state: &monster::BattleState) -> bool {
+    return battle_state.player_monster.attack_stat >= battle_state.opp_monster.attack_stat;
 }
