@@ -28,6 +28,8 @@ pub struct BattleState<'a> {
     pub player_turn: bool,
     pub player_monster: &'a Monster<'a>,
     pub opp_monster: &'a Monster<'a>,
+    pub player_team:  Vec<(String, f32)>,
+    pub enemy_team: Vec<(String, f32)>,
     pub self_attack_stages: i32,
     pub self_defense_stages: i32,
     pub opp_attack_stages: i32,

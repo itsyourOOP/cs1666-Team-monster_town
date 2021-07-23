@@ -350,68 +350,88 @@ fn message_box<'a>(
 }
 
 pub fn player_battle_turn(
-    wincan: &mut sdl2::render::WindowCanvas, 
+    wincan: &mut sdl2::render::WindowCanvas,
     battle_state: &mut monster::BattleState,
     battle_draw: &mut Battle,
     monsters_map: &HashMap<String, monster::Monster>,
     current_choice: usize,
 ) -> Result<Map, String> {
-
     let enemy_monster = battle_draw.enemy_name.clone();
     let player_monster = battle_draw.player_name.clone();
 
     // Message for what move was used
     thread::sleep(Duration::from_millis(100));
 
-    let f = format!("{} used {}!", &player_monster, monsters_map[&player_monster].moves[current_choice].name);
+    let f = format!(
+        "{} used {}!",
+        &player_monster, monsters_map[&player_monster].moves[current_choice].name
+    );
     draw_battle(wincan, &battle_draw, None, Some(f))?;
 
     // Apply the damage internally and to the drawing
     let d = monster::calculate_damage(battle_state, current_choice);
     battle_draw.apply_enemy_damage(d);
+    battle_state.enemy_team[0].1 = battle_draw.enemy_health;
 
     // Check effectiveness, and message based upon it
     let effectiveness = monster::str_effectiveness(
-      d,
-      &monsters_map[&player_monster].moves[current_choice].attack_type,
-      &monsters_map[&enemy_monster].monster_type, 
+        d,
+        &monsters_map[&player_monster].moves[current_choice].attack_type,
+        &monsters_map[&enemy_monster].monster_type,
     );
     match effectiveness {
-      Some(s) => {
-        thread::sleep(Duration::from_millis(300));
-        draw_battle(wincan, &battle_draw, None, Some(s))?;
-      },
-      None => {
-        draw_battle(wincan, &battle_draw, None, None)?;
-      }
+        Some(s) => {
+            thread::sleep(Duration::from_millis(300));
+            draw_battle(wincan, &battle_draw, None, Some(s))?;
+        }
+        None => {
+            draw_battle(wincan, &battle_draw, None, None)?;
+        }
     }
 
     thread::sleep(Duration::from_millis(300));
-    
-    if battle_draw.enemy_health == 0.0 {
-      // Write message that enemy is KO'd
-      let f = format!("{} KO'd {}!", &player_monster, &enemy_monster);
-      draw_battle(wincan, &battle_draw, None, Some(f))?;
 
-      // Fade out back to the overworld
-      let screen = Rect::new(0, 0, CAM_W, CAM_H);
-      wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
-      for _i in 0..50 {
-        wincan.fill_rect(screen)?;
-        wincan.present();
-      }
-      return Ok( Map::Overworld );
+    if battle_draw.enemy_health == 0.0 {
+        // Write message that enemy is KO'd
+        thread::sleep(Duration::from_millis(200));
+        let f = format!("{} KO'd {}!", &player_monster, &enemy_monster);
+        draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+        if battle_state.enemy_team.len() > 1 && battle_state.enemy_team[1].1 > 0.0 {
+            battle_state.enemy_team = verify_team(&battle_state.enemy_team);
+            battle_draw.enemy_health = battle_state.enemy_team[0].1;
+            battle_draw.enemy_name = battle_state.enemy_team[0].0.clone();
+            
+            thread::sleep(Duration::from_millis(200));
+            let f = format!("Enemy sent out {}!", battle_state.enemy_team[0].0);
+            draw_battle(wincan, &battle_draw, None, Some(f))?;
+            thread::sleep(Duration::from_millis(200));
+            battle_state.player_turn = !battle_state.player_turn;
+        } else {
+            thread::sleep(Duration::from_millis(200));
+            let f = format!("You defeated the enemy!");
+            draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+            // Fade out back to the overworld
+            let screen = Rect::new(0, 0, CAM_W, CAM_H);
+            wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
+            for _i in 0..50 {
+                wincan.fill_rect(screen)?;
+                wincan.present();
+            }
+            return Ok(Map::Overworld);
+        }
     }
-    Ok( Map::Battle )
+    battle_state.player_turn = !battle_state.player_turn;
+    Ok(Map::Battle)
 }
 
 pub fn enemy_battle_turn(
-    wincan: &mut sdl2::render::WindowCanvas, 
+    wincan: &mut sdl2::render::WindowCanvas,
     battle_state: &mut monster::BattleState,
     battle_draw: &mut Battle,
     monsters_map: &HashMap<String, monster::Monster>,
 ) -> Result<Map, String> {
-
     let enemy_monster = battle_draw.enemy_name.clone();
     let player_monster = battle_draw.player_name.clone();
 
@@ -421,52 +441,334 @@ pub fn enemy_battle_turn(
 
     thread::sleep(Duration::from_millis(300));
 
-
-    let f = format!("{} used {}!", &enemy_monster, monsters_map[&enemy_monster].moves[enemy_choice].name);
+    let f = format!(
+        "{} used {}!",
+        &enemy_monster, monsters_map[&enemy_monster].moves[enemy_choice].name
+    );
     draw_battle(wincan, &battle_draw, None, Some(f))?;
 
     // Apply the damage internally and to the drawing
     let d = monster::calculate_damage(battle_state, enemy_choice);
     battle_draw.apply_player_damage(d);
-
+    battle_state.player_team[0].1 = battle_draw.player_health;
+    
     // Check effectiveness, and message based upon it
     let effectiveness = monster::str_effectiveness(
-      d,
-      &monsters_map[&enemy_monster].moves[enemy_choice].attack_type,
-      &monsters_map[&player_monster].monster_type, 
+        d,
+        &monsters_map[&enemy_monster].moves[enemy_choice].attack_type,
+        &monsters_map[&player_monster].monster_type,
     );
     match effectiveness {
-      Some(s) => {
-        thread::sleep(Duration::from_millis(300));
-        draw_battle(wincan, &battle_draw, None, Some(s))?;
-      },
-      None => {
-        draw_battle(wincan, &battle_draw, None, None)?;
-      }
+        Some(s) => {
+            thread::sleep(Duration::from_millis(300));
+            draw_battle(wincan, &battle_draw, None, Some(s))?;
+        }
+        None => {
+            draw_battle(wincan, &battle_draw, None, None)?;
+        }
     }
 
     thread::sleep(Duration::from_millis(300));
-    
+
     if battle_draw.player_health == 0.0 {
-      // Write message that player is KO'd
-          thread::sleep(Duration::from_millis(200));
-      let f = format!("{} KO'd {}!", &enemy_monster, &player_monster);
-      draw_battle(wincan, &battle_draw, None, Some(f))?;
+        // Write message that player is KO'd
+        thread::sleep(Duration::from_millis(200));
+        let f = format!("{} KO'd {}!", &enemy_monster, &player_monster);
+        draw_battle(wincan, &battle_draw, None, Some(f))?;
+        
+        if battle_state.player_team.len() > 1 && battle_state.player_team[1].1 > 0.0 {
+            battle_state.player_team = verify_team(&battle_state.player_team);
+            battle_draw.player_health = battle_state.player_team[0].1;
+            battle_draw.player_name = battle_state.player_team[0].0.clone();
+            
+            thread::sleep(Duration::from_millis(200));
+            let f = format!("Player sent out {}!", battle_state.player_team[0].0);
+            draw_battle(wincan, &battle_draw, None, Some(f))?;
+            thread::sleep(Duration::from_millis(200));
+            battle_state.player_turn = !battle_state.player_turn;
+        } else {
+            thread::sleep(Duration::from_millis(200));
+            let f = format!("You blacked out!");
+            draw_battle(wincan, &battle_draw, None, Some(f))?;
 
+            // Fade out back to the overworld
+            let screen = Rect::new(0, 0, CAM_W, CAM_H);
+            wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
+            for _i in 0..50 {
+                wincan.fill_rect(screen)?;
+                wincan.present();
+            }
 
-      thread::sleep(Duration::from_millis(200));
-      let f = format!("You blacked out!");
-      draw_battle(wincan, &battle_draw, None, Some(f))?;
-     
-
-      // Fade out back to the overworld
-      let screen = Rect::new(0, 0, CAM_W, CAM_H);
-      wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
-      for _i in 0..50 {
-        wincan.fill_rect(screen)?;
-        wincan.present();
-      }
-      return Ok( Map::Overworld );
+            for item in battle_state.player_team.iter_mut() {
+                (*item).1 = 100.0;
+            }
+            return Ok(Map::Overworld);
+        }
     }
-    Ok( Map::Battle )
+    battle_state.player_turn = !battle_state.player_turn;
+    Ok(Map::Battle)
+}
+
+fn menu_health_bars(
+    wincan: &mut sdl2::render::WindowCanvas,
+    health: f32,
+    x: i32,
+    y: i32,
+    w: u32,
+    h: u32,
+) -> Result<(), String> {
+    if health > 50 as f32 {
+        wincan.set_draw_color(Color::GREEN);
+    } else if health > 20 as f32 {
+        wincan.set_draw_color(Color::YELLOW);
+    } else if health == 0 as f32 {
+        wincan.set_draw_color(Color::RGBA(0, 0, 0, 0));
+    } else {
+        wincan.set_draw_color(Color::RED);
+    }
+
+    let r = Rect::new(x, y, w, h);
+    wincan.fill_rect(r)?;
+    Ok(())
+}
+
+pub fn draw_monster_menu(
+    wincan: &mut sdl2::render::WindowCanvas,
+    battle_init: &Battle,
+    battle_state: &monster::BattleState,
+    choice: usize,
+    selected_choice: Option<usize>,
+) -> Result<(), String> {
+    let player_team = &battle_state.player_team;
+
+    // Create menu background
+    //wincan.set_draw_color(Color::RGB(0, 38, 255));
+    wincan.set_draw_color(Color::RGB(0x20, 0x41, 0x6a));
+    wincan.fill_rect(Rect::new(100, 80, 350, 560))?;
+    wincan.fill_rect(Rect::new(470, 80, 710, 560))?;
+
+    // Create a slot for each team member and a confirmation button
+    let mut rects = Vec::new();
+    for i in 1..4 {
+        let j = i * 4 - 1;
+        rects.push(Rect::new(506, j * 35, 301, 105));
+        rects.push(Rect::new(843, (j + 1) * 35, 301, 105));
+    }
+    rects.push(Rect::new(750, 560, 150, 50));
+
+    // Outline the currently selected option
+    let outline_size = 5;
+    let r = rects[choice];
+    let move_outline_rect = Rect::new(
+        r.x() - outline_size,
+        r.y() - outline_size,
+        (r.width() + (2 * outline_size) as u32) as u32,
+        (r.height() + (2 * outline_size) as u32) as u32,
+    );
+    wincan.set_draw_color(Color::RGB(0xf6, 0x52, 0x41));
+    wincan.fill_rect(move_outline_rect)?;
+
+    match selected_choice {
+        Some(c) => {
+            // Outline the currently selected option
+            let outline_size = 5;
+            let r = rects[c];
+            let move_outline_rect = Rect::new(
+                r.x() - outline_size,
+                r.y() - outline_size,
+                (r.width() + (2 * outline_size) as u32) as u32,
+                (r.height() + (2 * outline_size) as u32) as u32,
+            );
+            wincan.set_draw_color(Color::YELLOW);
+            wincan.fill_rect(move_outline_rect)?;
+        }
+        None => {}
+    }
+
+    // Draw each slot
+    wincan.set_draw_color(Color::RGB(0x39, 0x7B, 0xB4));
+    for (_index, item) in rects.iter().enumerate() {
+        wincan.fill_rect(*item)?;
+    }
+
+    // Draw OK button
+    let texture_creator = wincan.texture_creator();
+    let f = String::from("OK");
+    let surface = battle_init
+        .font
+        .render(&f)
+        .blended(Color::BLACK)
+        .map_err(|e| e.to_string())?;
+    let texture = texture_creator
+        .create_texture_from_surface(&surface)
+        .map_err(|e| e.to_string())?;
+    let TextureQuery { width, height, .. } = texture.query();
+    let text_rect = Rect::new(750, 560, 150, 50);
+    let text_rect = center(fit(text_rect, width, height), 150, 50);
+    wincan.copy(&texture, None, text_rect)?;
+
+    // Draw monster image background
+    let s = 20;
+    wincan.set_draw_color(Color::RGB(0x8b, 0xa4, 0xb4)); //de, 0xee, 0xff));
+    wincan.set_draw_color(Color::RGB(0x39, 0x7B, 0xB4));
+    wincan.fill_rect(Rect::new(110, 90, 330, 330))?;
+
+    if choice == 6 {
+        let texture = texture_creator.load_texture("images/walk1_32.png")?;
+        wincan.copy(
+            &texture,
+            None,
+            Rect::new(100 + s, 80 + s, 350 - 2 * s as u32, 350 - 2 * s as u32),
+        )?;
+
+        let f = String::from("Player");
+        let surface = battle_init
+            .font
+            .render(&f)
+            .blended(Color::RGB(0xbd, 0xcd, 0xde))
+            .map_err(|e| e.to_string())?;
+        let texture = texture_creator
+            .create_texture_from_surface(&surface)
+            .map_err(|e| e.to_string())?;
+        let TextureQuery { width, height, .. } = texture.query();
+        let text_rect = Rect::new(110, 417, 330, 50);
+        let text_rect = center(fit(text_rect, width, height), 330, 50);
+        wincan.copy(&texture, None, text_rect)?;
+
+        // Add stats
+
+        // TODO: Have a count of the number of badges
+        let f = format!("Badges: {}", 0);
+        let surface = battle_init
+            .font
+            .render(&f)
+            .blended(Color::RGB(0xbd, 0xcd, 0xde))
+            .map_err(|e| e.to_string())?;
+        let texture = texture_creator
+            .create_texture_from_surface(&surface)
+            .map_err(|e| e.to_string())?;
+        let TextureQuery { width, height, .. } = texture.query();
+        let text_rect = Rect::new(110, 470, 330, 35);
+        let text_rect = center(fit(text_rect, width, height), 330, 35);
+        wincan.copy(&texture, None, text_rect)?;
+    } else {
+        // Draw focused monster image
+        wincan.copy(
+            &battle_init.monster_text_map[&player_team[choice].0],
+            None,
+            Rect::new(100 + s, 80 + s, 350 - 2 * s as u32, 350 - 2 * s as u32),
+        )?;
+        let surface = battle_init
+            .font
+            .render(&player_team[choice].0)
+            .blended(Color::RGB(0xbd, 0xcd, 0xde))
+            .map_err(|e| e.to_string())?;
+        let texture = texture_creator
+            .create_texture_from_surface(&surface)
+            .map_err(|e| e.to_string())?;
+        let TextureQuery { width, height, .. } = texture.query();
+        let text_rect = Rect::new(110, 417, 330, 50);
+        let text_rect = center(fit(text_rect, width, height), 330, 50);
+        wincan.copy(&texture, None, text_rect)?;
+
+        // Add stats
+        let f = format!(
+            "Attack: {} | Defense: {}",
+            &battle_init.monsters[&player_team[choice].0].attack_stat,
+            &battle_init.monsters[&player_team[choice].0].defense_stat
+        );
+        let surface = battle_init
+            .font
+            .render(&f)
+            .blended(Color::RGB(0xbd, 0xcd, 0xde))
+            .map_err(|e| e.to_string())?;
+        let texture = texture_creator
+            .create_texture_from_surface(&surface)
+            .map_err(|e| e.to_string())?;
+        let TextureQuery { width, height, .. } = texture.query();
+        let text_rect = Rect::new(110, 470, 330, 35);
+        let text_rect = center(fit(text_rect, width, height), 330, 35);
+        wincan.copy(&texture, None, text_rect)?;
+
+        // Add each move
+        for i in 0..4 {
+            let attack_name = &battle_init.monsters[&player_team[choice].0].moves[i].name;
+            let texture = &battle_init.attack_map[attack_name];
+
+            // Add the names of each attack
+            // Figure out how to resize the text to fit within the provided space
+            let TextureQuery { width, height, .. } = texture.query();
+            let text_rect = Rect::new(110, 485 + (30 * (i + 1)) as i32, 330, 30);
+            let text_rect = center(fit(text_rect, width, height), 330, 30);
+
+            wincan.copy(&texture, None, text_rect)?;
+        }
+
+        // Add a line to separate monster name from stats
+        wincan.set_draw_color(Color::RGB(0xbd, 0xcd, 0xde));
+        wincan.fill_rect(Rect::new(110, 468, 330, 2))?;
+    }
+
+    for index in 0..6 {
+        let item = rects[index];
+        if index < player_team.len() {
+            let health = player_team[index].1;
+            println!("helth for {} = {}", player_team[index].0, health);
+            //let health = 10.0;
+            let name_texture = &battle_init.name_text_map[&player_team[index].0].0;
+            let TextureQuery { width, height, .. } = name_texture.query();
+            let text_rect = Rect::new(item.x + 5, item.y + 5, item.width() - 10, 40);
+            let text_rect = center(fit(text_rect, width, height), 290, 40);
+
+            wincan.copy(name_texture, None, text_rect)?;
+
+            wincan.set_draw_color(Color::BLACK);
+            wincan.fill_rect(Rect::new(item.x + 10, item.y + 105 - 10 - 25, 280, 25))?;
+            if health > 0.0 {
+                menu_health_bars(
+                    wincan,
+                    health,
+                    item.x + 10,
+                    item.y + 105 - 10 - 25,
+                    ((health * 280.0 / 100.0) as f32).ceil() as u32,
+                    25,
+                )?;
+            } else {
+                let f = String::from("FAINTED");
+                let surface = battle_init
+                    .font
+                    .render(&f)
+                    .blended(Color::WHITE)
+                    .map_err(|e| e.to_string())?;
+                let texture = texture_creator
+                    .create_texture_from_surface(&surface)
+                    .map_err(|e| e.to_string())?;
+                let TextureQuery { width, height, .. } = texture.query();
+                let text_rect = Rect::new(item.x + 10, item.y + 105 - 10 - 25, 280, 25);
+                let text_rect = center(fit(text_rect, width, height), 280, 25);
+                wincan.copy(&texture, None, text_rect)?;
+            }
+        } else {
+            wincan.set_draw_color(Color::BLACK);
+            wincan.fill_rect(item)?;
+        }
+    }
+
+    wincan.present();
+    Ok(())
+}
+
+pub fn verify_team(v: &Vec<(String, f32)>) -> Vec<(String, f32)>{
+    let mut alive : Vec<(String, f32)> = Vec::new();
+    let mut dead : Vec<(String, f32)> = Vec::new();
+    for item in v.iter() {
+      if item.1 > 0.0 {
+        alive.push(item.clone());
+      }
+      else {
+        dead.push(item.clone());
+      }
+    }
+    alive.append(&mut dead);
+    return alive;
 }
