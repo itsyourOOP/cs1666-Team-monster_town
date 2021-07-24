@@ -28,6 +28,8 @@ pub struct BattleState<'a> {
     pub player_turn: bool,
     pub player_monster: &'a Monster<'a>,
     pub opp_monster: &'a Monster<'a>,
+    pub player_team:  Vec<(String, f32)>,
+    pub enemy_team: Vec<(String, f32)>,
     pub self_attack_stages: i32,
     pub self_defense_stages: i32,
     pub opp_attack_stages: i32,
@@ -87,9 +89,13 @@ pub fn str_effectiveness(damage: f32, attack_type: &String, defense_type: &Strin
         return None;
     }
 
-    return if a == 2.0 {Some(String::from("It was super effective!"))}
-    else if a == 0.5 {Some(String::from("It was not very effective."))}
-    else {None};
+    return if a == 2.0 {
+        Some(String::from("It was super effective!"))
+    } else if a == 0.5 {
+        Some(String::from("It was not very effective."))
+    } else {
+        None
+    };
 }
 
 fn type_effectiveness(attack_type: &String, defense_type: &String) -> f32 {
@@ -101,7 +107,7 @@ fn type_effectiveness(attack_type: &String, defense_type: &String) -> f32 {
         "Flying" => match defense_type.as_str() {
             "Grass" => 2.0,
             _ => 1.0,
-        }
+        },
         _ => 1.0,
     }
 }
@@ -117,8 +123,8 @@ fn damage_calc(damage: f32, a: f32, d: f32, stab: f32, typb: f32) -> f32 {
     return (30.0 * damage * (a / d) / 100.0) * stab * typb;
 }
 
-pub fn calculate_damage(battle_state: &mut BattleState, move_index: usize) -> f32 {
-    if battle_state.player_turn {
+pub fn calculate_damage(battle_state: &mut BattleState, move_index: usize, player_turn: bool) -> f32 {
+    if player_turn {
         let attack = battle_state.player_monster.moves[move_index];
         calculate_player_attack(
             battle_state,

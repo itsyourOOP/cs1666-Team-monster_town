@@ -2,14 +2,14 @@ extern crate sdl2;
 
 // Modules
 mod battle;
+pub mod monster;
 pub mod overworld;
 pub mod player;
-pub mod monster;
 
+use battle::Map;
 use monster::load_mons;
 use monster::load_moves;
 use player::Player;
-use battle::Map;
 
 use sdl2::event::Event;
 use sdl2::image::LoadTexture;
@@ -21,9 +21,12 @@ use sdl2::render::BlendMode;
 use std::collections::HashSet;
 use std::path::Path;
 
+//use std::time::Duration;
+//use std::thread;
 
-use rand::{self, Rng};
 use rand::thread_rng;
+use rand::{self, Rng};
+use rand::seq::SliceRandom;
 
 const TITLE: &str = "Monster Town Midterm";
 const TILE_SIZE: u32 = 16;
@@ -63,22 +66,29 @@ fn check_collision(a: &Rect, b: &Rect) -> bool {
   }
 }
 
-fn select_random_monster<'a>(keys: &Vec<String>) -> String {
-  let a = &keys[rand::thread_rng().gen_range(0..keys.len())];
-  return a.clone();
+fn select_random_team<'a>(keys: &Vec<String>, num: usize) -> Vec<(String, f32)> {
+  let mut rng = thread_rng();
+  let v : Vec<(String, f32)> = (*keys)
+    .choose_multiple(&mut rng, num)
+    .map(|s| (s.clone(), 100.0))
+    .collect();
+  return v
 }
-
 
 fn check_within(small: &Rect, large: &Rect) -> bool {
-  if small.left() > large.left() && small.right() < large.right() && small.top() > large.top() 
-    && small.top() > large.top() && small.bottom() < large.bottom() {
-      true
-    } else {
-      false
-    }
+  if small.left() > large.left()
+    && small.right() < large.right()
+    && small.top() > large.top()
+    && small.top() > large.top()
+    && small.bottom() < large.bottom()
+  {
+    true
+  } else {
+    false
+  }
 }
 
-fn random_spawn() -> bool{
+fn random_spawn() -> bool {
   let mut rng = thread_rng();
   let ran = rng.gen_range(0..600);
   if ran == 2 {
@@ -88,7 +98,15 @@ fn random_spawn() -> bool{
   }
 }
 
-
+fn next_available_mon(v: &Vec<(String, f32)>) -> String {
+  let a = String::new();
+  for i in v {
+    if i.1 > 0.0 {
+      return i.0.clone();
+    }
+  }
+  return a;
+}
 
 pub fn init(
   title: &str,
@@ -137,13 +155,9 @@ fn run(
   let home = texture_creator.load_texture("images/home.png")?;
   let battle_bg = texture_creator.load_texture("images/battle_bg.png")?;
   let npc_static = texture_creator.load_texture("images/NPC_1.png")?;
-  
   wincan.set_blend_mode(BlendMode::Blend);
 
   let mut loaded_map = Map::Overworld;
-
-  let player_monster = String::from("deer pokemon");
-  let mut enemy_monster = String::from("melon-mon");
 
   let moves_map = load_moves();
   let monsters_map = load_mons(&moves_map);
@@ -152,19 +166,36 @@ fn run(
   let font_path = Path::new(r"./fonts/framd.ttf");
   let font = ttf_context.load_font(font_path, 256)?;
 
-  let all_moves = moves_map.keys().map(|d| String::from(d)).collect::<Vec<String>>();
-  let all_effects = moves_map.values().map(|d| String::from(d.effect.clone())).collect::<Vec<String>>();
-  let all_monsters = monsters_map.keys().map(|d| String::from(d)).collect::<Vec<String>>();
+  let all_moves = moves_map
+    .keys()
+    .map(|d| String::from(d))
+    .collect::<Vec<String>>();
+  let all_effects = moves_map
+    .values()
+    .map(|d| String::from(d.effect.clone()))
+    .collect::<Vec<String>>();
+  let all_monsters = monsters_map
+    .keys()
+    .map(|d| String::from(d))
+    .collect::<Vec<String>>();
 
   let move_textures = battle::create_all_attack_textures(&texture_creator, &font, &all_moves)?;
   let effect_textures = battle::create_all_effect_textures(&texture_creator, &font, &all_effects)?;
   let names_tup = battle::create_all_name_tuples(&texture_creator, &font, &all_monsters)?;
   let monster_textures = battle::create_all_monster_textures(&texture_creator, &all_monsters)?;
 
+  let mut player_team: Vec<(String, f32)> = Vec::new();
+  player_team.push((String::from("Chromacat"), 100.0));
+  player_team.push((String::from("deer pokemon"), 100.0));
+  player_team.push((String::from("Reusoon"), 0.0));
+
+  let mut enemy_team: Vec<(String, f32)> = Vec::new();
+  enemy_team.push((String::from("melon-mon"), 100.0));
+
   let mut battle_draw = battle::Battle {
     background_texture: &battle_bg,
-    player_name: player_monster.clone(),
-    enemy_name: enemy_monster.clone(),
+    player_name: next_available_mon(&player_team),
+    enemy_name: next_available_mon(&enemy_team),
     font: &font,
     player_health: 100.0,
     enemy_health: 100.0,
@@ -176,10 +207,16 @@ fn run(
     moves: &moves_map,
   };
 
+  let player_monster = next_available_mon(&player_team);
+  let enemy_monster = next_available_mon(&enemy_team);
+
   let mut battle_state = monster::BattleState {
-    player_turn: monsters_map[&player_monster].attack_stat >= monsters_map[&enemy_monster].attack_stat,
+    player_turn: monsters_map[&player_monster].attack_stat
+      >= monsters_map[&enemy_monster].attack_stat,
     player_monster: &monsters_map[&player_monster],
     opp_monster: &monsters_map[&enemy_monster],
+    player_team: player_team.clone(),
+    enemy_team: enemy_team.clone(),
     self_attack_stages: 0,
     self_defense_stages: 0,
     opp_attack_stages: 0,
@@ -188,6 +225,9 @@ fn run(
 
   let mut current_choice: i32 = 0;
   let mut selection_buffer = 0;
+  let mut menu_active = false;
+  let mut menu_choice: usize = 0;
+  let mut menu_selected_choice: Option<usize> = None;
 
   let mut x_vel = 0;
   let mut y_vel = 0;
@@ -224,6 +264,9 @@ fn run(
     texture_creator.load_texture("images/single_npc.png")?,
   );
 
+  //battle::draw_monster_menu(wincan, &battle_draw, 3)?;
+  //thread::sleep(Duration::from_millis(5000));
+
   'gameloop: loop {
     for event in event_pump.poll_iter() {
       match event {
@@ -246,18 +289,8 @@ fn run(
     match loaded_map {
       Map::Overworld => {
         wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
-        
         overworld::draw_overworld(wincan)?;
         let spawnable_areas = overworld::mark_rectangles();
-        //let test = &spawnable_areas[0].x();
-        // iterate over the spawnable rectangles 
-        /*for i in &spawnable_areas{
-          let test_result = check_within(&Rect::new(100,120,1,1),i);
-          println!("{:?}",test_result);
-          if test_result == true && random_spawn() {
-            break;
-          }
-        }*/
 
         // Create the Town Gym
         let gym_1_box = Rect::new(340, 100, 150, 150);
@@ -297,6 +330,178 @@ fn run(
         let npc_static_box6 = Rect::new(880,180,32,32);
         wincan.copy(&npc_static, None, npc_static_box6)?;
 
+        if keystate.contains(&Keycode::M) {
+          menu_active = true;
+          continue;
+        }
+
+        if menu_active {
+          battle::draw_monster_menu(
+            wincan,
+            &battle_draw,
+            &battle_state,
+            menu_choice,
+            menu_selected_choice,
+          )?;
+          if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
+            if selection_buffer > 0 {
+              continue;
+            } else {
+              menu_choice = match menu_choice {
+                0 => 6,
+                1 => 6,
+                2 => 0,
+                3 => 1,
+                4 => 2,
+                5 => 3,
+                _ => 2 * (player_team.len() / 2 + player_team.len() % 2 - 1),
+              };
+              selection_buffer = BUFFER_FRAMES;
+            }
+          }
+          if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
+            if selection_buffer > 0 {
+              continue;
+            } else {
+              menu_choice = match menu_choice {
+                0 => {
+                  if player_team.len() > 1 {
+                    1
+                  } else {
+                    0
+                  }
+                }
+                1 => 0,
+                2 => {
+                  if player_team.len() > 3 {
+                    3
+                  } else {
+                    0
+                  }
+                }
+                3 => 2,
+                4 => {
+                  if player_team.len() > 5 {
+                    5
+                  } else {
+                    0
+                  }
+                }
+                5 => 4,
+                _ => 6,
+              };
+              selection_buffer = BUFFER_FRAMES;
+            }
+          }
+          if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
+            if selection_buffer > 0 {
+              continue;
+            } else {
+              menu_choice = match menu_choice {
+                0 => {
+                  if player_team.len() > 4 {
+                    4
+                  } else if player_team.len() > 2 {
+                    2
+                  } else {
+                    6
+                  }
+                }
+                1 => {
+                  if player_team.len() == 6 {
+                    5
+                  } else if player_team.len() > 3 {
+                    3
+                  } else {
+                    6
+                  }
+                }
+                2 => {
+                  if player_team.len() > 4 {
+                    4
+                  } else {
+                    6
+                  }
+                }
+                3 => {
+                  if player_team.len() == 6 {
+                    5
+                  } else {
+                    6
+                  }
+                }
+                4 => 6,
+                5 => 6,
+                _ => 0,
+              };
+              selection_buffer = BUFFER_FRAMES;
+            }
+          }
+          if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
+            if selection_buffer > 0 {
+              continue;
+            } else {
+              menu_choice = match menu_choice {
+                0 => {
+                  if player_team.len() > 1 {
+                    1
+                  } else {
+                    0
+                  }
+                }
+                1 => 0,
+                2 => {
+                  if player_team.len() > 3 {
+                    3
+                  } else {
+                    0
+                  }
+                }
+                3 => 2,
+                4 => {
+                  if player_team.len() > 5 {
+                    5
+                  } else {
+                    0
+                  }
+                }
+                5 => 4,
+                _ => 6,
+              };
+              selection_buffer = BUFFER_FRAMES;
+            }
+          }
+          if keystate.contains(&Keycode::Return) {
+            if selection_buffer > 0 {
+              continue;
+            } else {
+              if menu_choice == 6 {
+                menu_active = false;
+                menu_selected_choice = None;
+                selection_buffer = BUFFER_FRAMES;
+                battle_state.player_team = battle::verify_team(&battle_state.player_team);
+                continue;
+              }
+              match menu_selected_choice {
+                Some(choice) => {
+                  if choice != menu_choice {
+                    battle_state.player_team.swap(choice, menu_choice);
+                    menu_selected_choice = None;
+                  }
+                }
+                None => {
+                  menu_selected_choice = Some(menu_choice);
+                }
+              }
+              selection_buffer = BUFFER_FRAMES;
+            }
+          }
+          if selection_buffer > 0 {
+            selection_buffer -= 1;
+          }
+          continue;
+        }
+
         let mut x_deltav = 0;
         let mut y_deltav = 0;
         if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
@@ -327,28 +532,66 @@ fn run(
         player_box.set_y(player_box.y() + y_vel);
 
         // Three NPCs are moving horizontally
-        let mut npc1_box = Rect::new(npc_player1.x(), npc_player1.y(), npc_player1.height(), npc_player1.width());
-        let mut npc2_box = Rect::new(npc_player2.x(), npc_player2.y(), npc_player2.height(), npc_player2.width());
-        let mut npc3_box = Rect::new(npc_player3.x(), npc_player3.y(), npc_player3.height(), npc_player3.width());
-        npc1_box.set_x((npc1_box.x() + delta_x_npc1).clamp(480,600));
-        npc2_box.set_x((npc2_box.x() + delta_x_npc2).clamp(510,640));
-        npc3_box.set_x((npc3_box.x() + delta_x_npc3).clamp(992,1117));
+        let mut npc1_box = Rect::new(
+          npc_player1.x(),
+          npc_player1.y(),
+          npc_player1.height(),
+          npc_player1.width(),
+        );
+        let mut npc2_box = Rect::new(
+          npc_player2.x(),
+          npc_player2.y(),
+          npc_player2.height(),
+          npc_player2.width(),
+        );
+        let mut npc3_box = Rect::new(
+          npc_player3.x(),
+          npc_player3.y(),
+          npc_player3.height(),
+          npc_player3.width(),
+        );
+        npc1_box.set_x((npc1_box.x() + delta_x_npc1).clamp(480, 600));
+        npc2_box.set_x((npc2_box.x() + delta_x_npc2).clamp(510, 640));
+        npc3_box.set_x((npc3_box.x() + delta_x_npc3).clamp(992, 1117));
 
-        if npc1_box.x() == 600  { flip_1 = true; }
-        if npc1_box.x() == 480 { flip_1 = false; }
-        if flip_1 == false { delta_x_npc1 += 1; }
-        if flip_1 == true{ delta_x_npc1 -= 1;}
+        if npc1_box.x() == 600 {
+          flip_1 = true;
+        }
+        if npc1_box.x() == 480 {
+          flip_1 = false;
+        }
+        if flip_1 == false {
+          delta_x_npc1 += 1;
+        }
+        if flip_1 == true {
+          delta_x_npc1 -= 1;
+        }
 
-        if npc2_box.x() == 640  { flip_2 = true; }
-        if npc2_box.x() == 510 { flip_2 = false; }
-        if flip_2 == false { delta_x_npc2 += 1; }
-        if flip_2 == true{ delta_x_npc2 -= 1;}
-        
-        if npc3_box.x() == 1117  { flip_3 = true; }
-        if npc3_box.x() == 992 { flip_3 = false; }
-        if flip_3 == false { delta_x_npc3 += 1; }
-        if flip_3 == true{ delta_x_npc3 -= 1;}
+        if npc2_box.x() == 640 {
+          flip_2 = true;
+        }
+        if npc2_box.x() == 510 {
+          flip_2 = false;
+        }
+        if flip_2 == false {
+          delta_x_npc2 += 1;
+        }
+        if flip_2 == true {
+          delta_x_npc2 -= 1;
+        }
 
+        if npc3_box.x() == 1117 {
+          flip_3 = true;
+        }
+        if npc3_box.x() == 992 {
+          flip_3 = false;
+        }
+        if flip_3 == false {
+          delta_x_npc3 += 1;
+        }
+        if flip_3 == true {
+          delta_x_npc3 -= 1;
+        }
         // Check for collision between player and gyms as well as cam bounds(need to consider trees)
         // Use the "go-back" approach to collision resolution
         if check_collision(&player_box, &gym_1_box)
@@ -366,30 +609,33 @@ fn run(
           player_box.set_y(player_box.y() - y_vel);
         }
 
-        for i in &spawnable_areas{
-          let test_result = check_within(&player_box,i);
-          //println!("{:?}",test_result);
+        for i in &spawnable_areas {
+          let test_result = check_within(&player_box, i);
           if test_result == true && random_spawn() {
             let screen = Rect::new(0, 0, CAM_W, CAM_H);
             wincan.copy(player.texture(), None, player_box)?;
-
             wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
             for _i in 0..50 {
               wincan.fill_rect(screen)?;
               wincan.present();
             }
             loaded_map = Map::Battle;
-
             battle_draw.enemy_health = 100.0;
 
-            enemy_monster = select_random_monster(&all_monsters);
+            let enemy_team = select_random_team(&all_monsters, 1);
 
+            let enemy_monster = enemy_team[0].0.clone();
             battle_draw.enemy_name = enemy_monster.clone();
+            let player_monster = next_available_mon(&player_team);
+            battle_draw.player_name = player_monster.clone();
 
             battle_state = monster::BattleState {
-              player_turn: monsters_map[&player_monster].attack_stat >= monsters_map[&enemy_monster].attack_stat,
+              player_turn: monsters_map[&player_monster].attack_stat
+                >= monsters_map[&enemy_monster].attack_stat,
               player_monster: &monsters_map[&player_monster],
               opp_monster: &monsters_map[&enemy_monster],
+              player_team: battle_state.player_team.clone(),
+              enemy_team: enemy_team.clone(),
               self_attack_stages: 0,
               self_defense_stages: 0,
               opp_attack_stages: 0,
@@ -398,14 +644,13 @@ fn run(
 
             player_box.set_x(player_box.x() - x_vel);
             player_box.set_y(player_box.y() - y_vel);
-                    
             break;
           }
         }
 
         // Check for collision between player and gyms as well as cam bounds
         // Use the "go-back" approach to collision resolution
-         if check_collision(&player_box, &npc_static_box1)
+        if check_collision(&player_box, &npc_static_box1)
           || check_collision(&player_box, &npc_static_box2)
           || check_collision(&player_box, &npc_static_box3)
           || check_collision(&player_box, &npc_static_box4)
@@ -420,22 +665,22 @@ fn run(
           wincan.copy(npc_player2.texture(), None, npc2_box)?;
           wincan.copy(npc_player3.texture(), None, npc3_box)?;
 
-          overworld::display_menu(wincan,player_box.x(),player_box.y())?;
-
-
-
-
-
+          overworld::display_menu(wincan, player_box.x(), player_box.y())?;
 
           if keystate.contains(&Keycode::F) {
-
-            enemy_monster = select_random_monster(&all_monsters);
+            let enemy_team = select_random_team(&all_monsters, 2);
+            
+            let enemy_monster = enemy_team[0].0.clone();
             battle_draw.enemy_name = enemy_monster.clone();
+            let player_monster = next_available_mon(&battle_state.player_team);
+            battle_draw.player_name = player_monster.clone();
 
             battle_state = monster::BattleState {
-              player_turn: monsters_map[&player_monster].attack_stat >= monsters_map[&enemy_monster].attack_stat,
+              player_turn: battle::turn_calc(&battle_state),
               player_monster: &monsters_map[&player_monster],
               opp_monster: &monsters_map[&enemy_monster],
+              player_team: battle_state.player_team.clone(),
+              enemy_team: enemy_team.clone(),
               self_attack_stages: 0,
               self_defense_stages: 0,
               opp_attack_stages: 0,
@@ -445,38 +690,36 @@ fn run(
             loaded_map = Map::Battle;
             battle_draw.enemy_health = 100.0;
 
-             wincan.present();
+            wincan.present();
+            wincan.clear();
+            battle::draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
 
-             x_vel = 0;
-              y_vel = 0;
+            x_vel = 0;
+            y_vel = 0;
 
             continue;
           }
 
-
           //flashing not active when moving away
 
-        if keystate.contains(&Keycode::W) 
-        || keystate.contains(&Keycode::Up)   
-        || keystate.contains(&Keycode::A) 
-        || keystate.contains(&Keycode::Left) 
-        || keystate.contains(&Keycode::S) 
-        || keystate.contains(&Keycode::Down) 
-        || keystate.contains(&Keycode::D) 
-        || keystate.contains(&Keycode::Right)
-{
-         wincan.present();
+          if keystate.contains(&Keycode::W)
+            || keystate.contains(&Keycode::Up)
+            || keystate.contains(&Keycode::A)
+            || keystate.contains(&Keycode::Left)
+            || keystate.contains(&Keycode::S)
+            || keystate.contains(&Keycode::Down)
+            || keystate.contains(&Keycode::D)
+            || keystate.contains(&Keycode::Right)
+          {
+            wincan.present();
 
-         x_vel = 0;
-          y_vel = 0;
+            x_vel = 0;
+            y_vel = 0;
 
-          continue;
-}
+            continue;
+          }
 
-
-    
-
-          //causes the flashing effect. Every time near npc, screen flashes 
+          //causes the flashing effect. Every time near npc, screen flashes
           wincan.present();
           wincan.present();
 
@@ -486,11 +729,7 @@ fn run(
           continue;
         }
 
-
-
-
         wincan.copy(player.texture(), None, player_box)?;
-        
         wincan.copy_ex(
           npc_player1.texture(),
           Rect::new(0, 0, 32, 32),
@@ -523,8 +762,215 @@ fn run(
       }
 
       Map::Battle => {
-        battle::draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
+        if menu_active {
+          battle::draw_monster_menu(
+            wincan,
+            &battle_draw,
+            &battle_state,
+            menu_choice,
+            menu_selected_choice,
+          )?;
+          if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
+            if selection_buffer > 0 {
+              continue;
+            } else {
+              menu_choice = match menu_choice {
+                0 => 6,
+                1 => 6,
+                2 => 0,
+                3 => 1,
+                4 => 2,
+                5 => 3,
+                _ => 2 * (player_team.len() / 2 + player_team.len() % 2 - 1),
+              };
+              selection_buffer = BUFFER_FRAMES;
+            }
+          }
+          if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
+            if selection_buffer > 0 {
+              continue;
+            } else {
+              menu_choice = match menu_choice {
+                0 => {
+                  if player_team.len() > 1 {
+                    1
+                  } else {
+                    0
+                  }
+                }
+                1 => 0,
+                2 => {
+                  if player_team.len() > 3 {
+                    3
+                  } else {
+                    0
+                  }
+                }
+                3 => 2,
+                4 => {
+                  if player_team.len() > 5 {
+                    5
+                  } else {
+                    0
+                  }
+                }
+                5 => 4,
+                _ => 6,
+              };
+              selection_buffer = BUFFER_FRAMES;
+            }
+          }
+          if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
+            if selection_buffer > 0 {
+              continue;
+            } else {
+              menu_choice = match menu_choice {
+                0 => {
+                  if player_team.len() > 4 {
+                    4
+                  } else if player_team.len() > 2 {
+                    2
+                  } else {
+                    6
+                  }
+                }
+                1 => {
+                  if player_team.len() == 6 {
+                    5
+                  } else if player_team.len() > 3 {
+                    3
+                  } else {
+                    6
+                  }
+                }
+                2 => {
+                  if player_team.len() > 4 {
+                    4
+                  } else {
+                    6
+                  }
+                }
+                3 => {
+                  if player_team.len() == 6 {
+                    5
+                  } else {
+                    6
+                  }
+                }
+                4 => 6,
+                5 => 6,
+                _ => 0,
+              };
+              selection_buffer = BUFFER_FRAMES;
+            }
+          }
+          if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
+            if selection_buffer > 0 {
+              continue;
+            } else {
+              menu_choice = match menu_choice {
+                0 => {
+                  if player_team.len() > 1 {
+                    1
+                  } else {
+                    0
+                  }
+                }
+                1 => 0,
+                2 => {
+                  if player_team.len() > 3 {
+                    3
+                  } else {
+                    0
+                  }
+                }
+                3 => 2,
+                4 => {
+                  if player_team.len() > 5 {
+                    5
+                  } else {
+                    0
+                  }
+                }
+                5 => 4,
+                _ => 6,
+              };
+              selection_buffer = BUFFER_FRAMES;
+            }
+          }
+          if keystate.contains(&Keycode::Return) {
+            if selection_buffer > 0 {
+              continue;
+            } else {
+              if menu_choice == 6 {
+                menu_active = false;
+                menu_selected_choice = None;
+                selection_buffer = BUFFER_FRAMES;
+                battle_state.player_team = battle::verify_team(&battle_state.player_team);
 
+                let mut switched_front : &(String, f32) = &(String::from(""), 0.0);
+                for i in 0..battle_state.player_team.len() {
+                  if battle_state.player_team[i].1 > 0.0 {
+                    switched_front = &battle_state.player_team[i];
+                    break;
+                  }
+                }
+
+                if battle_draw.player_name != switched_front.0 {
+                  let new_mon = String::from(switched_front.0.clone());
+                  let f = format!("You switched in {}!", new_mon);
+                  battle_draw.player_name = new_mon.clone();
+                  battle_draw.player_health = switched_front.1;
+                  battle_state.player_monster = &monsters_map[&battle_state.player_team[0].0];
+                  battle_state.opp_monster = &monsters_map[&battle_state.enemy_team[0].0];
+                  battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
+
+                  match battle::enemy_battle_turn(
+                    wincan,
+                    &mut battle_state,
+                    &mut battle_draw,
+                    &monsters_map,
+                  )? {
+                    Map::Overworld => {
+                      loaded_map = Map::Overworld;
+    
+                      // Have the player spawn at the hospital with full health
+                      player_box.set_x(112);
+                      player_box.set_y(604);
+
+                      for i in 0..battle_state.player_team.len() {
+                        battle_state.player_team[i].1 = 100.0;
+                      }
+                      battle_draw.player_health = 100.0;
+                      continue;
+                    }
+                    _ => {}
+                  }
+                }
+
+                continue;
+              }
+              match menu_selected_choice {
+                Some(choice) => {
+                  if choice != menu_choice {
+                    battle_state.player_team.swap(choice, menu_choice);
+                    menu_selected_choice = None;
+                  }
+                }
+                None => {
+                  menu_selected_choice = Some(menu_choice);
+                }
+              }
+              selection_buffer = BUFFER_FRAMES;
+            }
+          }
+          if selection_buffer > 0 {
+            selection_buffer -= 1;
+          }
+
+          continue;
+        }
+        battle::draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
         if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
           if selection_buffer > 0 {
             continue;
@@ -559,59 +1005,90 @@ fn run(
             battle::draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
           }
         }
+        if keystate.contains(&Keycode::M)
+          || keystate.contains(&Keycode::S)
+          || keystate.contains(&Keycode::Down)
+        {
+          menu_active = true;
+          continue;
+        }
         if keystate.contains(&Keycode::Return) {
-          // Battle Logic
-          if battle_state.player_turn {
-            match battle::player_battle_turn(wincan, &mut battle_state, &mut battle_draw, &monsters_map, current_choice as usize)? {
-              Map::Overworld => { 
-                loaded_map = Map::Overworld;
-                continue;
-              }
-              _ => {}
-            }
-            // Change to AI's turn
-            battle_state.player_turn = !battle_state.player_turn;
-            
-            match battle::enemy_battle_turn(wincan, &mut battle_state, &mut battle_draw, &monsters_map)? {
-              Map::Overworld => { 
-                loaded_map = Map::Overworld;
-
-                // Have the player spawn at the hospital with full health
-                player_box.set_x(112);
-                player_box.set_y(604);
-                battle_draw.player_health = 100.0;
-                continue;
-              }
-              _ => {}
-            }
-            
-            // Change to player's turn
-            battle_state.player_turn = !battle_state.player_turn;
+          if selection_buffer > 0 {
+            continue;
           } else {
-            match battle::enemy_battle_turn(wincan, &mut battle_state, &mut battle_draw, &monsters_map)? {
-              Map::Overworld => { 
-                loaded_map = Map::Overworld;
-                // Have the player spawn at the hospital with full health
-                player_box.set_x(112);
-                player_box.set_y(604);
-                battle_draw.player_health = 100.0;
-                continue;
+            battle_state.player_monster = &monsters_map[&battle_state.player_team[0].0];
+            battle_state.opp_monster = &monsters_map[&battle_state.enemy_team[0].0];
+            battle_state.player_turn = battle::turn_calc(&battle_state);
+            // Battle Logic
+            if battle_state.player_turn {
+              match battle::player_battle_turn(
+                wincan,
+                &mut battle_state,
+                &mut battle_draw,
+                &monsters_map,
+                current_choice as usize,
+              )? {
+                Map::Overworld => {
+                  loaded_map = Map::Overworld;
+                  continue;
+                }
+                _ => {}
               }
-              _ => {}
-            }
+              
+              if !battle_state.player_turn {
+                match battle::enemy_battle_turn(
+                  wincan,
+                  &mut battle_state,
+                  &mut battle_draw,
+                  &monsters_map,
+                )? {
+                  Map::Overworld => {
+                    loaded_map = Map::Overworld;
 
-            // Change to player's turn
-            battle_state.player_turn = !battle_state.player_turn;
-            match battle::player_battle_turn(wincan, &mut battle_state, &mut battle_draw, &monsters_map, current_choice as usize)? {
-              Map::Overworld => { 
-                loaded_map = Map::Overworld;
-                continue;
+                    // Have the player spawn at the hospital with full health
+                    player_box.set_x(112);
+                    player_box.set_y(604);
+                    battle_draw.player_health = 100.0;
+                    continue;
+                  }
+                  _ => {}
+                }
               }
-              _ => {}
-            }
-            // Change to AI's turn
-            battle_state.player_turn = !battle_state.player_turn;
+            } else {
+              match battle::enemy_battle_turn(
+                wincan,
+                &mut battle_state,
+                &mut battle_draw,
+                &monsters_map,
+              )? {
+                Map::Overworld => {
+                  loaded_map = Map::Overworld;
+                  // Have the player spawn at the hospital with full health
+                  player_box.set_x(112);
+                  player_box.set_y(604);
+                  battle_draw.player_health = 100.0;
+                  continue;
+                }
+                _ => {}
+              }
 
+              if battle_state.player_turn {
+                match battle::player_battle_turn(
+                  wincan,
+                  &mut battle_state,
+                  &mut battle_draw,
+                  &monsters_map,
+                  current_choice as usize,
+                )? {
+                  Map::Overworld => {
+                    loaded_map = Map::Overworld;
+                    continue;
+                  }
+                  _ => {}
+                }
+              }
+            }
+            battle_state.player_monster = &battle_draw.monsters[&battle_state.player_team[0].0.clone()];
           }
         }
         if selection_buffer > 0 {
