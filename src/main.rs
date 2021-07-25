@@ -323,6 +323,14 @@ fn run(
         let home_box = Rect::new(610, 250, 150, 140);
         wincan.copy(&home, None, home_box)?;
 
+        // Create front of gym box for each gym
+        let front_of_gym_1_box = Rect::new(340,250,150,15);
+        let front_of_gym_2_box = Rect::new(1110, 600, 150, 15);
+        let front_of_gym_3_box = Rect::new(810, 400, 150, 15);
+        let front_of_gym_4_box = Rect::new(300, 600, 150, 15);
+        let front_of_hospital_box = Rect::new(50, 600, 150, 15);
+        let front_of_home_box = Rect::new(610,400,150,15);
+
         // Create several static npcs
         let npc_static_box1 = Rect::new(490,230,32,32);
         wincan.copy(&npc_static, None, npc_static_box1)?;
@@ -598,6 +606,16 @@ fn run(
           player_box.set_y(player_box.y() - y_vel);
         }
 
+        if check_collision(&player_box, &front_of_gym_1_box)
+          || check_collision(&player_box, &front_of_gym_2_box)
+          || check_collision(&player_box, &front_of_gym_3_box)
+          || check_collision(&player_box, &front_of_gym_4_box)
+          || check_collision(&player_box, &front_of_hospital_box)
+          || check_collision(&player_box, &front_of_home_box)
+          {
+            overworld::display_building_menu(wincan, player_box.x(), player_box.y())?;
+          }
+        
         for i in &spawnable_areas {
           let test_result = check_within(&player_box, i);
           if test_result == true && random_spawn() 
