@@ -18,6 +18,7 @@ use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::BlendMode;
 
+use std::time::{Instant};
 use std::collections::HashSet;
 use std::path::Path;
 
@@ -42,6 +43,7 @@ const ACCEL_RATE: i32 = 1;
 
 const _SCALE_UP: i16 = 3;
 
+const DELTA_TIME: f64 = 1.0/60.0;
 const BUFFER_FRAMES: u32 = 10;
 
 fn resist(vel: i32, deltav: i32) -> i32 {
@@ -90,7 +92,7 @@ fn check_within(small: &Rect, large: &Rect) -> bool {
 
 fn random_spawn() -> bool {
   let mut rng = thread_rng();
-  let ran = rng.gen_range(0..600);
+  let ran = rng.gen_range(0..300);
   if ran == 2 {
     true
   } else {
@@ -240,6 +242,9 @@ fn run(
   let mut flip_2 = false;
   let mut flip_3 = false;
 
+  // Tracking time
+  let mut time_count = Instant::now();
+
   // Player Creation from mod player with a start position
   let player = Player::create(
     Rect::new(64, 64, TILE_SIZE * 2 as u32, TILE_SIZE * 2 as u32),
@@ -286,6 +291,8 @@ fn run(
       .filter_map(Keycode::from_scancode)
       .collect();
 
+    let elapsed = time_count.elapsed().as_secs_f64();
+
     match loaded_map {
       Map::Overworld => {
         wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
@@ -307,7 +314,7 @@ fn run(
         // Create Fourth Town Gym
         let gym_4_box = Rect::new(300, 450, 150, 150);
         wincan.copy(&gym_4, None, gym_4_box)?;
- 
+
         //Create Hospital
         let hospital_box = Rect::new(50, 450, 150, 150);
         wincan.copy(&hospital, None, hospital_box)?;
@@ -562,44 +569,26 @@ fn run(
         npc2_box.set_x((npc2_box.x() + delta_x_npc2).clamp(510, 640));
         npc3_box.set_x((npc3_box.x() + delta_x_npc3).clamp(992, 1117));
 
-        if npc1_box.x() == 600 {
-          flip_1 = true;
-        }
-        if npc1_box.x() == 480 {
-          flip_1 = false;
-        }
-        if flip_1 == false {
-          delta_x_npc1 += 1;
-        }
-        if flip_1 == true {
-          delta_x_npc1 -= 1;
-        }
+        if npc1_box.x() == 600  { flip_1 = true; }
+        if npc1_box.x() == 480 { flip_1 = false; }
+        if flip_1 == false && ((elapsed * 100.0).round() % (DELTA_TIME * 100.0).round() == 0.0)
+          { delta_x_npc1 += 1; }
+        if flip_1 == true && ((elapsed * 100.0).round() % (DELTA_TIME * 100.0).round() == 0.0)
+          { delta_x_npc1 -= 1;}
 
-        if npc2_box.x() == 640 {
-          flip_2 = true;
-        }
-        if npc2_box.x() == 510 {
-          flip_2 = false;
-        }
-        if flip_2 == false {
-          delta_x_npc2 += 1;
-        }
-        if flip_2 == true {
-          delta_x_npc2 -= 1;
-        }
-
-        if npc3_box.x() == 1117 {
-          flip_3 = true;
-        }
-        if npc3_box.x() == 992 {
-          flip_3 = false;
-        }
-        if flip_3 == false {
-          delta_x_npc3 += 1;
-        }
-        if flip_3 == true {
-          delta_x_npc3 -= 1;
-        }
+        if npc2_box.x() == 640  { flip_2 = true; }
+        if npc2_box.x() == 510 { flip_2 = false; }
+        if flip_2 == false && ((elapsed * 100.0).round() % (DELTA_TIME * 100.0).round() == 0.0)
+          { delta_x_npc2 += 1; }
+        if flip_2 == true && ((elapsed * 100.0).round() % (DELTA_TIME * 100.0).round() == 0.0)
+          { delta_x_npc2 -= 1;}
+        
+        if npc3_box.x() == 1117  { flip_3 = true; }
+        if npc3_box.x() == 992 { flip_3 = false; }
+        if flip_3 == false && ((elapsed * 100.0).round() % (DELTA_TIME * 100.0).round() == 0.0)
+          { delta_x_npc3 += 1; }
+        if flip_3 == true && ((elapsed * 100.0).round() % (DELTA_TIME * 100.0).round() == 0.0)
+          { delta_x_npc3 -= 1;}
         // Check for collision between player and gyms as well as cam bounds(need to consider trees)
         // Use the "go-back" approach to collision resolution
         if check_collision(&player_box, &gym_1_box)
@@ -613,7 +602,6 @@ fn run(
           || player_box.top() < 64
           || player_box.bottom() > CAM_H as i32 - 64
         {
-          
           player_box.set_x(player_box.x() - x_vel);
           player_box.set_y(player_box.y() - y_vel);
         }
@@ -630,7 +618,9 @@ fn run(
 
         for i in &spawnable_areas {
           let test_result = check_within(&player_box, i);
-          if test_result == true && random_spawn() {
+          if test_result == true && random_spawn() 
+            && ((elapsed  * 100.0).round()) % ((DELTA_TIME* 100.0).round()) == 0.0 {
+            println!("check time step: {:.2}", elapsed);
             let screen = Rect::new(0, 0, CAM_W, CAM_H);
             wincan.copy(player.texture(), None, player_box)?;
             wincan.set_draw_color(Color::RGBA(0, 0, 0, 15));
