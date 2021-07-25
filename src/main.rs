@@ -324,12 +324,12 @@ fn run(
         wincan.copy(&home, None, home_box)?;
 
         // Create front of gym box for each gym
-        let front_of_gym_1_box = Rect::new(340,250,150,15);
-        let front_of_gym_2_box = Rect::new(1110, 600, 150, 15);
-        let front_of_gym_3_box = Rect::new(810, 400, 150, 15);
-        let front_of_gym_4_box = Rect::new(300, 600, 150, 15);
-        let front_of_hospital_box = Rect::new(50, 600, 150, 15);
-        let front_of_home_box = Rect::new(610,400,150,15);
+        let front_of_gym_1_box = Rect::new(390,250,30,5);
+        let front_of_gym_2_box = Rect::new(1160, 600, 30, 5);
+        let front_of_gym_3_box = Rect::new(860, 400, 30, 5);
+        let front_of_gym_4_box = Rect::new(360, 600, 30, 5);
+        let front_of_hospital_box = Rect::new(100, 600, 30, 5);
+        let front_of_home_box = Rect::new(660,400,30,5);
 
         // Create several static npcs
         let npc_static_box1 = Rect::new(490,230,32,32);
