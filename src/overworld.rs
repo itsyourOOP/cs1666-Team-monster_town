@@ -7,7 +7,8 @@ use sdl2::image::LoadTexture;
 //use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
-//use std::collections::HashSet;
+use std::collections::HashSet;
+use sdl2::render::WindowCanvas;
 
 const TILE_SIZE: u32 = 16;
 
@@ -218,7 +219,27 @@ pub fn display_menu(wincan: &mut sdl2::render::WindowCanvas, player_x: i32, play
   Ok(())
 }
 
+//STILL IMPLEMENTING INSIDE BUILDING. LEAVE COMMENTED CODE HERE
+//pub fn display_building_menu(wincan: &mut WindowCanvas, keystate: HashSet<Keycode>, player_x: i32, player_y: i32) -> Result<(), String> {
+pub fn display_building_menu(wincan: &mut WindowCanvas, player_x: i32, player_y: i32) -> Result<(), String> {
+  let texture_creator = wincan.texture_creator();
+  let display_gym_box = texture_creator.load_texture("images/enterbuilding.png").unwrap();
 
+  let display_box = Rect::new(500, 200, 200 ,200);
+  wincan.copy(&display_gym_box, None, display_box);
+
+  /*if keystate.contains(&Keycode::Y)
+  {
+    //enter gym
+  }
+  else
+  {
+    // don't enter gym
+  }
+*/
+  Ok(())
+}
+  
 pub fn mark_rectangles() -> Vec<Rect>{
   let mut spn_rectangles = Vec::new();
   // Top left corner of the grass patches

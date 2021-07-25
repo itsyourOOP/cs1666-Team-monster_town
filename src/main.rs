@@ -307,7 +307,7 @@ fn run(
         // Create Fourth Town Gym
         let gym_4_box = Rect::new(300, 450, 150, 150);
         wincan.copy(&gym_4, None, gym_4_box)?;
-
+ 
         //Create Hospital
         let hospital_box = Rect::new(50, 450, 150, 150);
         wincan.copy(&hospital, None, hospital_box)?;
@@ -315,6 +315,14 @@ fn run(
         // Create Home Entity
         let home_box = Rect::new(610, 250, 150, 140);
         wincan.copy(&home, None, home_box)?;
+
+        // Create front of gym box for each gym
+        let front_of_gym_1_box = Rect::new(340,250,150,15);
+        let front_of_gym_2_box = Rect::new(1110, 600, 150, 15);
+        let front_of_gym_3_box = Rect::new(810, 400, 150, 15);
+        let front_of_gym_4_box = Rect::new(300, 600, 150, 15);
+        let front_of_hospital_box = Rect::new(50, 600, 150, 15);
+        let front_of_home_box = Rect::new(610,400,150,15);
 
         // Create several static npcs
         let npc_static_box1 = Rect::new(490,230,32,32);
@@ -605,9 +613,20 @@ fn run(
           || player_box.top() < 64
           || player_box.bottom() > CAM_H as i32 - 64
         {
+          
           player_box.set_x(player_box.x() - x_vel);
           player_box.set_y(player_box.y() - y_vel);
         }
+
+        if check_collision(&player_box, &front_of_gym_1_box)
+          || check_collision(&player_box, &front_of_gym_2_box)
+          || check_collision(&player_box, &front_of_gym_3_box)
+          || check_collision(&player_box, &front_of_gym_4_box)
+          || check_collision(&player_box, &front_of_hospital_box)
+          || check_collision(&player_box, &front_of_home_box)
+          {
+            overworld::display_building_menu(wincan, player_box.x(), player_box.y())?;
+          }
 
         for i in &spawnable_areas {
           let test_result = check_within(&player_box, i);
