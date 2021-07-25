@@ -615,7 +615,7 @@ fn run(
           {
             overworld::display_building_menu(wincan, player_box.x(), player_box.y())?;
           }
-
+        
         for i in &spawnable_areas {
           let test_result = check_within(&player_box, i);
           if test_result == true && random_spawn() 
