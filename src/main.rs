@@ -44,7 +44,9 @@ const ACCEL_RATE: i32 = 1;
 const _SCALE_UP: i16 = 3;
 
 const DELTA_TIME: f64 = 1.0/60.0;
-const BUFFER_FRAMES: u32 = 10;
+//const BUFFER_FRAMES: u32 = 10;
+// supposed keypress duration
+const KEYPRESS_DURATION: f64 = 1.0; 
 
 fn resist(vel: i32, deltav: i32) -> i32 {
   if deltav == 0 {
@@ -92,7 +94,7 @@ fn check_within(small: &Rect, large: &Rect) -> bool {
 
 fn random_spawn() -> bool {
   let mut rng = thread_rng();
-  let ran = rng.gen_range(0..300);
+  let ran = rng.gen_range(0..100);
   if ran == 2 {
     true
   } else {
@@ -226,7 +228,7 @@ fn run(
   };
 
   let mut current_choice: i32 = 0;
-  let mut selection_buffer = 0;
+  //let mut selection_buffer = 0;
   let mut menu_active = false;
   let mut menu_choice: usize = 0;
   let mut menu_selected_choice: Option<usize> = None;
@@ -244,6 +246,8 @@ fn run(
 
   // Tracking time
   let mut time_count = Instant::now();
+  let mut keypress_timer: f64 = 0.0;
+  let mut timer = Instant::now();
 
   // Player Creation from mod player with a start position
   let player = Player::create(
@@ -280,6 +284,19 @@ fn run(
           keycode: Some(Keycode::Escape),
           ..
         } => break 'gameloop,
+        Event::KeyUp{keycode: Some(k), repeat: false, ..} => {
+          match k {
+            Keycode::W => keypress_timer = 0.0,
+            Keycode::A => keypress_timer = 0.0,
+            Keycode::S => keypress_timer = 0.0,
+            Keycode::D => keypress_timer = 0.0,
+            Keycode::Up => keypress_timer = 0.0,
+            Keycode::Down => keypress_timer = 0.0,
+            Keycode::Left => keypress_timer = 0.0,
+            Keycode::Right => keypress_timer = 0.0,
+            _ => {},
+          }
+        }
         _ => {}
       }
     }
@@ -292,6 +309,8 @@ fn run(
       .collect();
 
     let elapsed = time_count.elapsed().as_secs_f64();
+    let single_elapsed = timer.elapsed().as_secs_f64();
+    timer = Instant::now();
 
     match loaded_map {
       Map::Overworld => {
@@ -359,9 +378,7 @@ fn run(
             menu_selected_choice,
           )?;
           if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
-            if selection_buffer > 0 {
-              continue;
-            } else {
+            if keypress_timer == 0.0 {
               menu_choice = match menu_choice {
                 0 => 6,
                 1 => 6,
@@ -371,13 +388,22 @@ fn run(
                 5 => 3,
                 _ => 2 * (player_team.len() / 2 + player_team.len() % 2 - 1),
               };
-              selection_buffer = BUFFER_FRAMES;
+            } else {
+              continue;
+            }; 
+            // need to calculate how much time each loop takes regarding the machine it runs on 
+            // so that we know how much to increment for the keypress timer
+            //println!("Is it calculating how much time a single loop takes: {:.4}", single_elapsed);
+            keypress_timer += single_elapsed;
+            //println!("keypress timer: {:.4}", keypress_timer);
+            if keypress_timer >= KEYPRESS_DURATION {
+              //println!("keypress timer supposed to go back to 0 now!");
+              keypress_timer = 0.0;
+              //timer = Instant::now();
             }
           }
           if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
-            if selection_buffer > 0 {
-              continue;
-            } else {
+            if keypress_timer == 0.0 {
               menu_choice = match menu_choice {
                 0 => {
                   if player_team.len() > 1 {
@@ -405,13 +431,18 @@ fn run(
                 5 => 4,
                 _ => 6,
               };
-              selection_buffer = BUFFER_FRAMES;
+            } else {
+              continue;
+            };
+            keypress_timer += single_elapsed;
+            if keypress_timer >= KEYPRESS_DURATION {
+              //println!("keypress timer supposed to go back to 0 now!");
+              keypress_timer = 0.0;
+              //timer = Instant::now();
             }
           }
           if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
-            if selection_buffer > 0 {
-              continue;
-            } else {
+            if keypress_timer == 0.0 {
               menu_choice = match menu_choice {
                 0 => {
                   if player_team.len() > 4 {
@@ -449,13 +480,18 @@ fn run(
                 5 => 6,
                 _ => 0,
               };
-              selection_buffer = BUFFER_FRAMES;
+            } else {
+              continue;
+            };
+            keypress_timer += single_elapsed;
+            if keypress_timer >= KEYPRESS_DURATION {
+              //println!("keypress timer supposed to go back to 0 now!");
+              keypress_timer = 0.0;
+              //timer = Instant::now();
             }
           }
           if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
-            if selection_buffer > 0 {
-              continue;
-            } else {
+            if keypress_timer == 0.0 {
               menu_choice = match menu_choice {
                 0 => {
                   if player_team.len() > 1 {
@@ -483,17 +519,23 @@ fn run(
                 5 => 4,
                 _ => 6,
               };
-              selection_buffer = BUFFER_FRAMES;
+              //selection_buffer = BUFFER_FRAMES;
+            } else {
+              continue;
+            }
+            keypress_timer += single_elapsed;
+            if keypress_timer >= KEYPRESS_DURATION {
+              //println!("keypress timer supposed to go back to 0 now!");
+              keypress_timer = 0.0;
+              //timer = Instant::now();
             }
           }
           if keystate.contains(&Keycode::Return) {
-            if selection_buffer > 0 {
-              continue;
-            } else {
+            if keypress_timer == 0.0 {
               if menu_choice == 6 {
                 menu_active = false;
                 menu_selected_choice = None;
-                selection_buffer = BUFFER_FRAMES;
+                //selection_buffer = BUFFER_FRAMES;
                 battle_state.player_team = battle::verify_team(&battle_state.player_team);
                 continue;
               }
@@ -508,12 +550,21 @@ fn run(
                   menu_selected_choice = Some(menu_choice);
                 }
               }
-              selection_buffer = BUFFER_FRAMES;
+              //selection_buffer = BUFFER_FRAMES;
+            } else {
+              continue;
+            };
+            //println!("Is it calculating how much time a single loop takes: {:.4}", single_elapsed);
+            keypress_timer += single_elapsed;
+            //println!("keypress timer: {:.4}", keypress_timer);
+            if keypress_timer >= KEYPRESS_DURATION {
+              //println!("keypress timer supposed to go back to 0 now!");
+              keypress_timer = 0.0;
+              //timer = Instant::now();
             }
           }
-          if selection_buffer > 0 {
-            selection_buffer -= 1;
-          }
+          //if selection_buffer > 0 {
+            //selection_buffer -= 1;
           continue;
         }
 
@@ -780,9 +831,7 @@ fn run(
             menu_selected_choice,
           )?;
           if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
-            if selection_buffer > 0 {
-              continue;
-            } else {
+            if keypress_timer == 0.0 {
               menu_choice = match menu_choice {
                 0 => 6,
                 1 => 6,
@@ -792,13 +841,21 @@ fn run(
                 5 => 3,
                 _ => 2 * (player_team.len() / 2 + player_team.len() % 2 - 1),
               };
-              selection_buffer = BUFFER_FRAMES;
+              //selection_buffer = BUFFER_FRAMES;
+            } else {
+              continue;
+            };
+            //println!("Is it calculating how much time a single loop takes: {:.4}", single_elapsed);
+            keypress_timer += single_elapsed;
+            //println!("keypress timer: {:.4}", keypress_timer);
+            if keypress_timer >= KEYPRESS_DURATION {
+              //println!("keypress timer supposed to go back to 0 now!");
+              keypress_timer = 0.0;
+              //timer = Instant::now();
             }
           }
           if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
-            if selection_buffer > 0 {
-              continue;
-            } else {
+            if keypress_timer == 0.0 {
               menu_choice = match menu_choice {
                 0 => {
                   if player_team.len() > 1 {
@@ -826,13 +883,21 @@ fn run(
                 5 => 4,
                 _ => 6,
               };
-              selection_buffer = BUFFER_FRAMES;
+              //selection_buffer = BUFFER_FRAMES;
+            } else {
+              continue;
+            }
+            //println!("Is it calculating how much time a single loop takes: {:.4}", single_elapsed);
+            keypress_timer += single_elapsed;
+            //println!("keypress timer: {:.4}", keypress_timer);
+            if keypress_timer >= KEYPRESS_DURATION {
+              //println!("keypress timer supposed to go back to 0 now!");
+              keypress_timer = 0.0;
+              //timer = Instant::now();
             }
           }
           if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
-            if selection_buffer > 0 {
-              continue;
-            } else {
+            if keypress_timer == 0.0 {
               menu_choice = match menu_choice {
                 0 => {
                   if player_team.len() > 4 {
@@ -870,13 +935,21 @@ fn run(
                 5 => 6,
                 _ => 0,
               };
-              selection_buffer = BUFFER_FRAMES;
+              //selection_buffer = BUFFER_FRAMES;
+            } else {
+              continue;
+            };
+            //println!("Is it calculating how much time a single loop takes: {:.4}", single_elapsed);
+            keypress_timer += single_elapsed;
+            //println!("keypress timer: {:.4}", keypress_timer);
+            if keypress_timer >= KEYPRESS_DURATION {
+              //println!("keypress timer supposed to go back to 0 now!");
+              keypress_timer = 0.0;
+              //timer = Instant::now();
             }
           }
           if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
-            if selection_buffer > 0 {
-              continue;
-            } else {
+            if keypress_timer == 0.0 {
               menu_choice = match menu_choice {
                 0 => {
                   if player_team.len() > 1 {
@@ -904,17 +977,25 @@ fn run(
                 5 => 4,
                 _ => 6,
               };
-              selection_buffer = BUFFER_FRAMES;
+              //selection_buffer = BUFFER_FRAMES;
+            } else {
+              continue;
+            };
+            //println!("Is it calculating how much time a single loop takes: {:.4}", single_elapsed);
+            keypress_timer += single_elapsed;
+            //println!("keypress timer: {:.4}", keypress_timer);
+            if keypress_timer >= KEYPRESS_DURATION {
+              //println!("keypress timer supposed to go back to 0 now!");
+              keypress_timer = 0.0;
+              //timer = Instant::now();
             }
           }
           if keystate.contains(&Keycode::Return) {
-            if selection_buffer > 0 {
-              continue;
-            } else {
+            if keypress_timer == 0.0 {
               if menu_choice == 6 {
                 menu_active = false;
                 menu_selected_choice = None;
-                selection_buffer = BUFFER_FRAMES;
+                //selection_buffer = BUFFER_FRAMES;
                 battle_state.player_team = battle::verify_team(&battle_state.player_team);
 
                 let mut switched_front : &(String, f32) = &(String::from(""), 0.0);
@@ -970,20 +1051,27 @@ fn run(
                   menu_selected_choice = Some(menu_choice);
                 }
               }
-              selection_buffer = BUFFER_FRAMES;
+              //selection_buffer = BUFFER_FRAMES;
+            } else {
+              continue;
+            };
+            //println!("Is it calculating how much time a single loop takes: {:.4}", single_elapsed);
+            keypress_timer += single_elapsed;
+            //println!("keypress timer: {:.4}", keypress_timer);
+            if keypress_timer >= KEYPRESS_DURATION {
+              //println!("keypress timer supposed to go back to 0 now!");
+              keypress_timer = 0.0;
+              //timer = Instant::now();
             }
           }
-          if selection_buffer > 0 {
-            selection_buffer -= 1;
-          }
-
+          //if selection_buffer > 0 {
+            //selection_buffer -= 1;
+          //}
           continue;
         }
         battle::draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
         if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
-          if selection_buffer > 0 {
-            continue;
-          } else {
+          if keypress_timer == 0.0 {
             current_choice -= 1;
             current_choice = if current_choice > 3 {
               0
@@ -994,14 +1082,22 @@ fn run(
             };
 
             battle::draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
-            selection_buffer = BUFFER_FRAMES;
+            //selection_buffer = BUFFER_FRAMES;
             wincan.present();
+          } else {
+            continue;
+          };
+          //println!("Is it calculating how much time a single loop takes: {:.4}", single_elapsed);
+          keypress_timer += single_elapsed;
+          //println!("keypress timer: {:.4}", keypress_timer);
+          if keypress_timer >= KEYPRESS_DURATION {
+            //println!("keypress timer supposed to go back to 0 now!");
+            keypress_timer = 0.0;
+            //timer = Instant::now();
           }
         }
         if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
-          if selection_buffer > 0 {
-            continue;
-          } else {
+          if keypress_timer == 0.0 {
             current_choice += 1;
             current_choice = if current_choice > 3 {
               0
@@ -1010,8 +1106,18 @@ fn run(
             } else {
               current_choice
             };
-            selection_buffer = BUFFER_FRAMES;
+            //selection_buffer = BUFFER_FRAMES;
             battle::draw_battle(wincan, &battle_draw, Some(current_choice as usize), None)?;
+          } else {
+            continue;
+          }
+          //println!("Is it calculating how much time a single loop takes: {:.4}", single_elapsed);
+          keypress_timer += single_elapsed;
+          //println!("keypress timer: {:.4}", keypress_timer);
+          if keypress_timer >= KEYPRESS_DURATION {
+            //println!("keypress timer supposed to go back to 0 now!");
+            keypress_timer = 0.0;
+            //timer = Instant::now();
           }
         }
         if keystate.contains(&Keycode::M)
@@ -1022,9 +1128,7 @@ fn run(
           continue;
         }
         if keystate.contains(&Keycode::Return) {
-          if selection_buffer > 0 {
-            continue;
-          } else {
+          if keypress_timer == 0.0 {
             battle_state.player_monster = &monsters_map[&battle_state.player_team[0].0];
             battle_state.opp_monster = &monsters_map[&battle_state.enemy_team[0].0];
             battle_state.player_turn = battle::turn_calc(&battle_state);
@@ -1098,11 +1202,21 @@ fn run(
               }
             }
             battle_state.player_monster = &battle_draw.monsters[&battle_state.player_team[0].0.clone()];
+          } else {
+            continue;
+          };
+          //println!("Is it calculating how much time a single loop takes: {:.4}", single_elapsed);
+          keypress_timer += single_elapsed;
+          //println!("keypress timer: {:.4}", keypress_timer);
+          if keypress_timer >= KEYPRESS_DURATION {
+            //println!("keypress timer supposed to go back to 0 now!");
+            keypress_timer = 0.0;
+            //timer = Instant::now();
           }
         }
-        if selection_buffer > 0 {
-          selection_buffer -= 1;
-        }
+        //if selection_buffer > 0 {
+          //selection_buffer -= 1;
+        //}
       }
     }
   }
