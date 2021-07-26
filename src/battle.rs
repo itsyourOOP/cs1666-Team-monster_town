@@ -170,23 +170,15 @@ pub fn draw_battle(
     wincan.copy(&battle_init.background_texture, None, Rect::new(0,0,CAM_W,CAM_H))?;
 
     let move_rects: Vec<_> = (0..4)
-        .map(|i| 60 + i * (200 + 40))
+        .map(|i| 180 + i * (200 + 40))
         .map(|i| Rect::new(i, 560 as i32, 200, 100))
         .collect();
-
-    // add the "switch mons" button
-    let switch_x = 60 + 4 * (200 + 40);
-    let switch_but = Rect::new(switch_x, 560 as i32, 200, 100);
-
-    let mut move_and_switch_rects = move_rects.clone(); 
-    move_and_switch_rects.insert(4, switch_but);
 
     // Create an outline around the move that is currently selected
     let outline_size = 5;
 
     match choice {
         Some(option) => {
-
             let r = move_rects[option];
             let move_outline_rect = Rect::new(
                 r.x() - outline_size,
@@ -194,7 +186,6 @@ pub fn draw_battle(
                 (r.width() + (2 * outline_size) as u32) as u32,
                 (r.height() + (2 * outline_size) as u32) as u32,
             );
-
 
             wincan.set_draw_color(Color::RGB(0xf6, 0x52, 0x41));
             wincan.fill_rect(move_outline_rect)?;
@@ -209,50 +200,26 @@ pub fn draw_battle(
         wincan.set_draw_color(Color::RGB(0x20, 0x41, 0x6a));
         wincan.fill_rect(r)?;
 
-        match index {
-             4 => {
-                    let texture_creator = wincan.texture_creator();
-                    let s = "Switch monsters";
-                    let surface = battle_init.font
-                        .render(&s)
-                        .blended(Color::YELLOW)
-                        .map_err(|e| e.to_string())?;
-                    let texture = texture_creator
-                        .create_texture_from_surface(&surface)
-                        .map_err(|e| e.to_string())?;
-
-                    let TextureQuery { width, height, .. } = texture.query();
-
-                    let text_rect = Rect::new(r.x() + 10, r.y() + 5, 180, 50);
-                    let text_rect = center(fit(text_rect, width, height), 180, 50);
-                    wincan.copy(&texture, None, text_rect)?;
-            },
-            _ => {
-
-                    let attack_name = &battle_init.monsters[&battle_init.player_name].moves[index].name;
-                    let texture = &battle_init.attack_map[attack_name];
-                    
-                    // Add the names of each attack
-                    // Figure out how to resize the text to fit within the provided space
-                    let TextureQuery { width, height, .. } = texture.query();
-                    let text_rect = Rect::new(r.x() + 10, r.y() + 5, 180, 50);
-                    let text_rect = center(fit(text_rect, width, height), 180, 50);
-                    
-                    wincan.copy(&texture, None, text_rect)?;
-                    
-                    let effect_name = &battle_init.monsters[&battle_init.player_name].moves[index].effect;
-                    let texture = &battle_init.effect_map[effect_name];
-                    
-                    // Add the names of each effect
-                    let TextureQuery { width, height, .. } = texture.query();
-                    let text_rect = Rect::new(r.x() + 10, r.y() + 65, 180, 30);
-                    let text_rect = center(fit(text_rect, width, height), 180, 30);
-                    
-                    wincan.copy(&texture, None, text_rect)?;
-
-            }
-        }
-
+        let attack_name = &battle_init.monsters[&battle_init.player_name].moves[index].name;
+        let texture = &battle_init.attack_map[attack_name];
+        
+        // Add the names of each attack
+        // Figure out how to resize the text to fit within the provided space
+        let TextureQuery { width, height, .. } = texture.query();
+        let text_rect = Rect::new(r.x() + 10, r.y() + 5, 180, 50);
+        let text_rect = center(fit(text_rect, width, height), 180, 50);
+        
+        wincan.copy(&texture, None, text_rect)?;
+        
+        let effect_name = &battle_init.monsters[&battle_init.player_name].moves[index].effect;
+        let texture = &battle_init.effect_map[effect_name];
+        
+        // Add the names of each effect
+        let TextureQuery { width, height, .. } = texture.query();
+        let text_rect = Rect::new(r.x() + 10, r.y() + 65, 180, 30);
+        let text_rect = center(fit(text_rect, width, height), 180, 30);
+        
+        wincan.copy(&texture, None, text_rect)?;
     }
 
     // Add the names of both monsters
