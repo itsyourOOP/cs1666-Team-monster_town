@@ -93,6 +93,8 @@ pub fn str_effectiveness(damage: f32, attack_type: &String, defense_type: &Strin
         Some(String::from("It was super effective!"))
     } else if a == 0.5 {
         Some(String::from("It was not very effective."))
+    } else if a == 0.0 {
+        Some(String::from("It had no effect."))
     } else {
         None
     };
@@ -100,12 +102,45 @@ pub fn str_effectiveness(damage: f32, attack_type: &String, defense_type: &Strin
 
 fn type_effectiveness(attack_type: &String, defense_type: &String) -> f32 {
     match attack_type.as_str() {
+        "Grass" => match defense_type.as_str() {
+            "Fire" => 0.5,
+            "Water" => 2.0,
+            "Grass" => 0.5,
+            "Ground" => 2.0,
+            "Flying" => 0.5,
+            _ => 1.0,
+        },
+        "Fire" => match defense_type.as_str() {
+            "Fire" => 0.5,
+            "Water" => 0.5,
+            "Grass" => 2.0,
+            _ => 1.0,
+        },
+        "Water" => match defense_type.as_str() {
+            "Fire" => 2.0,
+            "Water" => 0.5,
+            "Grass" => 0.5,
+            "Ground" => 2.0,
+            _ => 1.0,
+        },
         "Electric" => match defense_type.as_str() {
             "Water" => 2.0,
+            "Electric" => 0.5,
+            "Grass" => 0.5,
+            "Ground" => 0.0,
+            "Flying" => 2.0,
+            _ => 1.0,
+        },
+        "Ground" => match defense_type.as_str() {
+            "Fire" => 2.0,
+            "Electric" => 2.0,
+            "Grass" => 0.5,
+            "Flying" => 0.0,
             _ => 1.0,
         },
         "Flying" => match defense_type.as_str() {
             "Grass" => 2.0,
+            "Electric" => 0.5,
             _ => 1.0,
         },
         _ => 1.0,
