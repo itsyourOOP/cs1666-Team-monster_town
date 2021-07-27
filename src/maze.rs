@@ -2,19 +2,19 @@ use rand::{self,Rng};
 use std::collections::HashMap;
 
 #[derive(Debug,Clone,Copy,PartialEq)]
-struct Container {
-    left_wall : bool,
-    right_wall : bool,
-    bottom_wall : bool,
-    top_wall: bool,
-    set: usize,
+pub struct Container {
+    pub left_wall : bool,
+    pub right_wall : bool,
+    pub bottom_wall : bool,
+    pub top_wall: bool,
+    pub set: usize,
 }
 
 #[derive(Debug,Clone)]
 pub struct Maze {
-    maze: Vec<Vec<Container>>,
-    maze_width: usize,
-    maze_height: usize,
+    pub maze: Vec<Vec<Container>>,
+    pub maze_width: usize,
+    pub maze_height: usize,
 }
 
 impl Maze {
@@ -212,4 +212,6 @@ impl Maze {
     maze.insert(maze.len(), current_row);
     return Maze { maze: maze, maze_height:height, maze_width:width };
   }
+
+  
 }
