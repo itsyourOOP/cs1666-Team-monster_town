@@ -192,9 +192,11 @@ fn run(
   player_team.push((String::from("Chromacat"), 100.0));
   player_team.push((String::from("deer pokemon"), 100.0));
   player_team.push((String::from("Reusoon"), 0.0));
+  player_team.push((String::from("Shockshroom"), 90.0));
 
   let mut enemy_team: Vec<(String, f32)> = Vec::new();
   enemy_team.push((String::from("melon-mon"), 100.0));
+  enemy_team.push((String::from("taterface"), 100.0));
 
   let mut battle_draw = battle::Battle {
     background_texture: &battle_bg,
@@ -666,7 +668,7 @@ fn run(
           || check_collision(&player_box, &front_of_hospital_box)
           || check_collision(&player_box, &front_of_home_box)
           {
-            overworld::display_building_menu(wincan, player_box.x(), player_box.y())?;
+            overworld::display_building_menu(wincan, keystate.clone(), player_box.x(), player_box.y())?;
           }
         
         for i in &spawnable_areas {
@@ -821,7 +823,7 @@ fn run(
         )?;
 
         wincan.present();
-      }
+      },
 
       Map::Battle => {
         if menu_active {
@@ -1219,6 +1221,23 @@ fn run(
         //if selection_buffer > 0 {
           //selection_buffer -= 1;
         //}
+      },
+
+      Map::GymOne => {
+        // loading the inside of the gym
+        // use a placeholder? 
+      },
+
+      Map::GymTwo => {
+
+      },
+
+      Map::GymThree => {
+
+      },
+
+      Map::GymFour => {
+
       }
     }
   }
