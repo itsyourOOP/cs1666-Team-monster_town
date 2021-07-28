@@ -358,7 +358,7 @@ fn run(
         // LETS GET THESE TO BE TIGHTER
         let front_of_gym_1_box = Rect::new(400,250,20,5);
         let front_of_gym_2_box = Rect::new(1180, 600, 20, 5);
-        let front_of_gym_3_box = Rect::new(870, 400, 20, 5);
+        let front_of_gym_3_box = Rect::new(872, 400, 20, 5);
         let front_of_gym_4_box = Rect::new(370, 600, 20, 5);
 
         //Create front of building box for buildings
