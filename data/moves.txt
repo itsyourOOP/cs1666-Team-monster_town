@@ -10,3 +10,4 @@ Indecision,0,0,0,0,0,Normal,Do nothing
 Water Wrath,60,0,0,0,0,Water,Water overwhelms the enemy
 Soar,0,0,1,0,0,Flying,Flies up to reduce damage
 Windy Wind-up,0,1,0,0,0,Flying,Increases wind to boost attacks
+Headbutt,20,0,0,0,0,Normal,Headbutts enemy
