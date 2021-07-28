@@ -5,8 +5,11 @@ mod battle;
 pub mod monster;
 pub mod overworld;
 pub mod player;
+pub mod gym;
+pub mod maze;
 
 use battle::Map;
+
 use monster::load_mons;
 use monster::load_moves;
 use player::Player;
@@ -275,6 +278,11 @@ fn run(
     texture_creator.load_texture("images/single_npc.png")?,
   );
 
+  let mut gym_one_maze = maze::Maze::create_random_maze(16, 9);
+  let mut gym_two_maze = maze::Maze::create_random_maze(9, 6);
+  let mut gym_three_maze = maze::Maze::create_random_maze(20, 16);
+  let mut gym_four_maze = maze::Maze::create_random_maze(5, 5);
+
   //battle::draw_monster_menu(wincan, &battle_draw, 3)?;
   //thread::sleep(Duration::from_millis(5000));
 
@@ -347,10 +355,13 @@ fn run(
         wincan.copy(&home, None, home_box)?;
 
         // Create front of gym box for each gym
+        // LETS GET THESE TO BE TIGHTER
         let front_of_gym_1_box = Rect::new(400,250,20,5);
         let front_of_gym_2_box = Rect::new(1180, 600, 20, 5);
         let front_of_gym_3_box = Rect::new(870, 400, 20, 5);
         let front_of_gym_4_box = Rect::new(370, 600, 20, 5);
+
+        //Create front of building box for buildings
         let front_of_hospital_box = Rect::new(110, 600, 20, 5);
         let front_of_home_box = Rect::new(680,400,20,5);
 
@@ -662,15 +673,55 @@ fn run(
         }
 
         if check_collision(&player_box, &front_of_gym_1_box)
-          || check_collision(&player_box, &front_of_gym_2_box)
-          || check_collision(&player_box, &front_of_gym_3_box)
-          || check_collision(&player_box, &front_of_gym_4_box)
-          || check_collision(&player_box, &front_of_hospital_box)
+          {
+            gym::display_gym_menu(wincan, player_box.x(), player_box.y())?;
+            if keystate.contains(&Keycode::Y)
+            {
+              loaded_map = Map::GymOne;
+              player_box.set_x(1200);
+               player_box.set_y(7);
+            }
+          }
+          if check_collision(&player_box, &front_of_gym_2_box)
+          {
+            gym::display_gym_menu(wincan, player_box.x(), player_box.y())?;
+            if keystate.contains(&Keycode::Y)
+            {
+              loaded_map = Map::GymTwo;
+              player_box.set_x(1200);
+               player_box.set_y(7);
+            }
+           
+          }
+          if check_collision(&player_box, &front_of_gym_3_box)
+          {
+            gym::display_gym_menu(wincan, player_box.x(), player_box.y())?;
+            if keystate.contains(&Keycode::Y)
+            {
+              loaded_map = Map::GymThree;
+              player_box.set_x(1200);
+              player_box.set_y(7);
+            }
+           
+          }
+          if check_collision(&player_box, &front_of_gym_4_box)
+          {
+            gym::display_gym_menu(wincan, player_box.x(), player_box.y())?;
+            if keystate.contains(&Keycode::Y)
+            {
+              loaded_map = Map::GymFour;
+              player_box.set_x(1200);
+              player_box.set_y(7);
+            }
+           
+          }
+        
+          if check_collision(&player_box, &front_of_hospital_box)
           || check_collision(&player_box, &front_of_home_box)
           {
             overworld::display_building_menu(wincan, keystate.clone(), player_box.x(), player_box.y())?;
           }
-        
+
         for i in &spawnable_areas {
           let test_result = check_within(&player_box, i);
           if test_result == true && random_spawn() 
@@ -1224,20 +1275,289 @@ fn run(
       },
 
       Map::GymOne => {
-        // loading the inside of the gym
-        // use a placeholder? 
-      },
+        
+        let keystate: HashSet<Keycode> = event_pump
+        .keyboard_state()
+        .pressed_scancodes()
+        .filter_map(Keycode::from_scancode)
+        .collect();
 
+         // wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
+          //overworld::draw_overworld(wincan)?;
+          
+          gym::draw_gym(wincan,keystate.clone(), gym_one_maze.clone())?;
+         
+          let exit_box = Rect::new(1240,0,100,50);
+          if check_collision(&player_box, &exit_box)
+            {
+              gym::display_exit_gym_menu(wincan, player_box.x(), player_box.y())?;
+              if keystate.contains(&Keycode::E)
+              {
+  
+                player_box.set_x(410);
+                player_box.set_y(260);
+                loaded_map = Map::Overworld;
+                gym_one_maze = maze::Maze::create_random_maze(16, 9);
+              }
+             
+            }
+          let mut x_deltav = 0;
+          let mut y_deltav = 0;
+          if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
+            y_deltav -= ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
+            x_deltav -= ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
+            y_deltav += ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
+            x_deltav += ACCEL_RATE;
+          }
+  
+          //Utilize the resist function: slowing it down
+          x_deltav = resist(x_vel, x_deltav);
+          y_deltav = resist(y_vel, y_deltav);
+  
+          // not exceed speed limit
+          x_vel = (x_vel + x_deltav).clamp(-MAX_SPEED, MAX_SPEED);
+          y_vel = (y_vel + y_deltav).clamp(-MAX_SPEED, MAX_SPEED);
+  
+          // Try to move horizontally
+          player_box.set_x(player_box.x() + x_vel);
+  
+          // Try to move vertically
+          player_box.set_y(player_box.y() + y_vel);
+  
+          wincan.copy(player.texture(), None, player_box)?;
+    
+          wincan.present();
+        
+          if keystate.contains(&Keycode::L)
+          {
+            gym_one_maze = maze::Maze::create_random_maze(16, 9);
+          }
+          if keystate.contains(&Keycode::R)
+          {
+            loaded_map = Map::Overworld;
+          }
+        
+      },
+  
       Map::GymTwo => {
-
+          
+        let keystate: HashSet<Keycode> = event_pump
+        .keyboard_state()
+        .pressed_scancodes()
+        .filter_map(Keycode::from_scancode)
+        .collect();
+    
+         // wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
+          //overworld::draw_overworld(wincan)?;
+          
+          gym::draw_gym(wincan,keystate.clone(), gym_two_maze.clone())?;
+          
+          let exit_box = Rect::new(1240,0,100,50);
+          if check_collision(&player_box, &exit_box)
+            {
+              gym::display_exit_gym_menu(wincan, player_box.x(), player_box.y())?;
+              if keystate.contains(&Keycode::E)
+              {
+                player_box.set_x(1190);
+                player_box.set_y(600);
+                loaded_map = Map::Overworld;
+                gym_two_maze = maze::Maze::create_random_maze(9, 6);
+              }
+             
+            }
+          let mut x_deltav = 0;
+          let mut y_deltav = 0;
+          if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
+            y_deltav -= ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
+            x_deltav -= ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
+            y_deltav += ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
+            x_deltav += ACCEL_RATE;
+          }
+  
+          //Utilize the resist function: slowing it down
+          x_deltav = resist(x_vel, x_deltav);
+          y_deltav = resist(y_vel, y_deltav);
+  
+          // not exceed speed limit
+          x_vel = (x_vel + x_deltav).clamp(-MAX_SPEED, MAX_SPEED);
+          y_vel = (y_vel + y_deltav).clamp(-MAX_SPEED, MAX_SPEED);
+  
+          // Try to move horizontally
+          player_box.set_x(player_box.x() + x_vel);
+  
+          // Try to move vertically
+          player_box.set_y(player_box.y() + y_vel);
+  
+          wincan.copy(player.texture(), None, player_box)?;
+    
+          wincan.present();
+        
+          if keystate.contains(&Keycode::L)
+          {
+            gym_two_maze = maze::Maze::create_random_maze(9, 6);
+  
+          }
+          if keystate.contains(&Keycode::R)
+          {
+            loaded_map = Map::Overworld;
+          }
+        
       },
-
+  
       Map::GymThree => {
+          
+        let keystate: HashSet<Keycode> = event_pump
+        .keyboard_state()
+        .pressed_scancodes()
+        .filter_map(Keycode::from_scancode)
+        .collect();
 
+  
+         // wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
+          //overworld::draw_overworld(wincan)?;
+          
+          gym::draw_gym(wincan,keystate.clone(), gym_three_maze.clone())?;
+         
+          let exit_box = Rect::new(1240,0,100,50);
+          if check_collision(&player_box, &exit_box)
+            {
+              gym::display_exit_gym_menu(wincan, player_box.x(), player_box.y())?;
+              if keystate.contains(&Keycode::E)
+              {
+                player_box.set_x(880);
+                player_box.set_y(400);
+                loaded_map = Map::Overworld;
+                gym_three_maze = maze::Maze::create_random_maze(20, 16);
+              }
+             
+            }
+          let mut x_deltav = 0;
+          let mut y_deltav = 0;
+          if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
+            y_deltav -= ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
+            x_deltav -= ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
+            y_deltav += ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
+            x_deltav += ACCEL_RATE;
+          }
+  
+          //Utilize the resist function: slowing it down
+          x_deltav = resist(x_vel, x_deltav);
+          y_deltav = resist(y_vel, y_deltav);
+  
+          // not exceed speed limit
+          x_vel = (x_vel + x_deltav).clamp(-MAX_SPEED, MAX_SPEED);
+          y_vel = (y_vel + y_deltav).clamp(-MAX_SPEED, MAX_SPEED);
+  
+          // Try to move horizontally
+          player_box.set_x(player_box.x() + x_vel);
+  
+          // Try to move vertically
+          player_box.set_y(player_box.y() + y_vel);
+  
+          wincan.copy(player.texture(), None, player_box)?;
+    
+          wincan.present();
+        
+          if keystate.contains(&Keycode::L)
+          {
+           
+            gym_three_maze = maze::Maze::create_random_maze(20, 16);
+  
+          }
+          if keystate.contains(&Keycode::R)
+          {
+            loaded_map = Map::Overworld;
+          }
+        
       },
-
+  
       Map::GymFour => {
+          
+        let keystate: HashSet<Keycode> = event_pump
+        .keyboard_state()
+        .pressed_scancodes()
+        .filter_map(Keycode::from_scancode)
+        .collect();
 
+         // wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
+          //overworld::draw_overworld(wincan)?;
+          
+          gym::draw_gym(wincan,keystate.clone(), gym_four_maze.clone())?;
+          
+          let exit_box = Rect::new(1240,0,100,50);
+          if check_collision(&player_box, &exit_box)
+            {
+              gym::display_exit_gym_menu(wincan, player_box.x(), player_box.y())?;
+              if keystate.contains(&Keycode::E)
+              {
+                player_box.set_x(380);
+                player_box.set_y(600);
+                loaded_map = Map::Overworld;
+                gym_four_maze = maze::Maze::create_random_maze(5, 5);
+              }
+             
+            }
+          let mut x_deltav = 0;
+          let mut y_deltav = 0;
+          if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
+            y_deltav -= ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
+            x_deltav -= ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
+            y_deltav += ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
+            x_deltav += ACCEL_RATE;
+          }
+  
+          //Utilize the resist function: slowing it down
+          x_deltav = resist(x_vel, x_deltav);
+          y_deltav = resist(y_vel, y_deltav);
+  
+          // not exceed speed limit
+          x_vel = (x_vel + x_deltav).clamp(-MAX_SPEED, MAX_SPEED);
+          y_vel = (y_vel + y_deltav).clamp(-MAX_SPEED, MAX_SPEED);
+  
+          // Try to move horizontally
+          player_box.set_x(player_box.x() + x_vel);
+  
+          // Try to move vertically
+          player_box.set_y(player_box.y() + y_vel);
+  
+          wincan.copy(player.texture(), None, player_box)?;
+    
+          wincan.present();
+        
+          if keystate.contains(&Keycode::L)
+          {
+            
+              gym_four_maze = maze::Maze::create_random_maze(5, 5);
+          }
+          if keystate.contains(&Keycode::R)
+          {
+            loaded_map = Map::Overworld;
+          }
+        
       }
     }
   }
