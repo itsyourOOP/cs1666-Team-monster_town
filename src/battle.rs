@@ -391,7 +391,7 @@ pub fn player_battle_turn(
     draw_battle(wincan, &battle_draw, None, Some(f))?;
 
     // Apply the damage internally and to the drawing
-    let d = monster::calculate_damage(battle_state, current_choice, true);
+    let d = monster::calculate_damage(battle_draw.monsters, battle_state, current_choice, true);
     battle_draw.apply_enemy_damage(d);
     battle_state.enemy_team[0].1 = battle_draw.enemy_health;
 
@@ -470,7 +470,7 @@ pub fn enemy_battle_turn(
     draw_battle(wincan, &battle_draw, None, Some(f))?;
 
     // Apply the damage internally and to the drawing
-    let d = monster::calculate_damage(battle_state, enemy_choice, false);
+    let d = monster::calculate_damage(battle_draw.monsters, battle_state, enemy_choice, false);
     battle_draw.apply_player_damage(d);
     battle_state.player_team[0].1 = battle_draw.player_health;
     
@@ -793,6 +793,6 @@ pub fn verify_team(v: &Vec<(String, f32)>) -> Vec<(String, f32)>{
     return alive;
 }
 
-pub fn turn_calc<'a>(battle_state: &monster::BattleState) -> bool {
-    return battle_state.player_monster.attack_stat >= battle_state.opp_monster.attack_stat;
+pub fn turn_calc<'a>(monsters: &HashMap<String, monster::Monster>, battle_state: &monster::BattleState) -> bool {
+    return monsters[&battle_state.player_team[0].0].attack_stat >= monsters[&battle_state.enemy_team[0].0].attack_stat;
 }

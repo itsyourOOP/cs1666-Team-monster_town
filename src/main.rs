@@ -7,6 +7,7 @@ pub mod overworld;
 pub mod player;
 pub mod gym;
 pub mod maze;
+pub mod ai;
 
 use battle::Map;
 
@@ -222,8 +223,6 @@ fn run(
   let mut battle_state = monster::BattleState {
     player_turn: monsters_map[&player_monster].attack_stat
       >= monsters_map[&enemy_monster].attack_stat,
-    player_monster: &monsters_map[&player_monster],
-    opp_monster: &monsters_map[&enemy_monster],
     player_team: player_team.clone(),
     enemy_team: enemy_team.clone(),
     self_attack_stages: 0,
@@ -747,8 +746,6 @@ fn run(
             battle_state = monster::BattleState {
               player_turn: monsters_map[&player_monster].attack_stat
                 >= monsters_map[&enemy_monster].attack_stat,
-              player_monster: &monsters_map[&player_monster],
-              opp_monster: &monsters_map[&enemy_monster],
               player_team: battle_state.player_team.clone(),
               enemy_team: enemy_team.clone(),
               self_attack_stages: 0,
@@ -791,9 +788,7 @@ fn run(
             battle_draw.player_name = player_monster.clone();
 
             battle_state = monster::BattleState {
-              player_turn: battle::turn_calc(&battle_state),
-              player_monster: &monsters_map[&player_monster],
-              opp_monster: &monsters_map[&enemy_monster],
+              player_turn: battle::turn_calc(&monsters_map, &battle_state),
               player_team: battle_state.player_team.clone(),
               enemy_team: enemy_team.clone(),
               self_attack_stages: 0,
@@ -1066,8 +1061,6 @@ fn run(
                   let f = format!("You switched in {}!", new_mon);
                   battle_draw.player_name = new_mon.clone();
                   battle_draw.player_health = switched_front.1;
-                  battle_state.player_monster = &monsters_map[&battle_state.player_team[0].0];
-                  battle_state.opp_monster = &monsters_map[&battle_state.enemy_team[0].0];
                   battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
 
                   match battle::enemy_battle_turn(
@@ -1184,9 +1177,7 @@ fn run(
         }
         if keystate.contains(&Keycode::Return) {
           if keypress_timer == 0.0 {
-            battle_state.player_monster = &monsters_map[&battle_state.player_team[0].0];
-            battle_state.opp_monster = &monsters_map[&battle_state.enemy_team[0].0];
-            battle_state.player_turn = battle::turn_calc(&battle_state);
+            battle_state.player_turn = battle::turn_calc(&monsters_map, &battle_state);
             // Battle Logic
             if battle_state.player_turn {
               match battle::player_battle_turn(
@@ -1256,7 +1247,6 @@ fn run(
                 }
               }
             }
-            battle_state.player_monster = &battle_draw.monsters[&battle_state.player_team[0].0.clone()];
           } else {
             continue;
           };
