@@ -8,6 +8,7 @@ pub mod player;
 pub mod gym;
 pub mod maze;
 pub mod ai;
+pub mod intro;
 
 use battle::Map;
 
@@ -26,14 +27,14 @@ use std::time::{Instant};
 use std::collections::HashSet;
 use std::path::Path;
 
-//use std::time::Duration;
-//use std::thread;
+use std::time::Duration;
+use std::thread;
 
 use rand::thread_rng;
 use rand::{self, Rng};
 use rand::seq::SliceRandom;
 
-const TITLE: &str = "Monster Town Midterm";
+const TITLE: &str = "Monster Town";
 const TILE_SIZE: u32 = 16;
 
 // Camera
@@ -163,9 +164,12 @@ fn run(
   let home = texture_creator.load_texture("images/home.png")?;
   let battle_bg = texture_creator.load_texture("images/battle_bg.png")?;
   let npc_static = texture_creator.load_texture("images/NPC_1.png")?;
+  let diff_texture = texture_creator.load_texture("images/difficulty_select.png")?;
+  let welcome = texture_creator.load_texture("images/welcome.png")?;
+
   wincan.set_blend_mode(BlendMode::Blend);
 
-  let mut loaded_map = Map::Overworld;
+  let mut loaded_map = Map::Intro;
 
   let moves_map = load_moves();
   let monsters_map = load_mons(&moves_map);
@@ -195,8 +199,10 @@ fn run(
   let mut player_team: Vec<(String, f32)> = Vec::new();
   player_team.push((String::from("Chromacat"), 100.0));
   player_team.push((String::from("deer pokemon"), 100.0));
-  player_team.push((String::from("Reusoon"), 0.0));
-  player_team.push((String::from("Shockshroom"), 90.0));
+  player_team.push((String::from("tokoro"), 100.0));
+  player_team.push((String::from("Shockshroom"), 100.0));
+  player_team.push((String::from("Gurmail"), 100.0));
+  player_team.push((String::from("Burhan2"), 100.0));
 
   let mut enemy_team: Vec<(String, f32)> = Vec::new();
   enemy_team.push((String::from("melon-mon"), 100.0));
@@ -223,7 +229,6 @@ fn run(
   let mut battle_state = monster::BattleState {
     player_turn: monsters_map[&player_monster].attack_stat
       >= monsters_map[&enemy_monster].attack_stat,
-    
     player_team: player_team.clone(),
     enemy_team: enemy_team.clone(),
     self_attack_stages: 0,
@@ -233,10 +238,12 @@ fn run(
   };
 
   let mut current_choice: i32 = 0;
-  //let mut selection_buffer = 0;
   let mut menu_active = false;
   let mut menu_choice: usize = 0;
   let mut menu_selected_choice: Option<usize> = None;
+  
+  let mut intro_played = false;
+  let mut difficulty_choice = 1;
 
   let mut x_vel = 0;
   let mut y_vel = 0;
@@ -283,9 +290,6 @@ fn run(
   let mut gym_three_maze = maze::Maze::create_random_maze(20, 16);
   let mut gym_four_maze = maze::Maze::create_random_maze(15, 15);
 
-  //battle::draw_monster_menu(wincan, &battle_draw, 3)?;
-  //thread::sleep(Duration::from_millis(5000));
-
   'gameloop: loop {
     for event in event_pump.poll_iter() {
       match event {
@@ -325,6 +329,68 @@ fn run(
     timer = Instant::now();
 
     match loaded_map {
+      Map::Intro => {
+        let screen = Rect::new(0, 0, CAM_W, CAM_H);
+        if !intro_played {
+          wincan.copy(&welcome, None, screen)?;
+          wincan.present();
+          wincan.set_draw_color(Color::RGBA(0, 0, 0, 20));
+
+          thread::sleep(Duration::from_millis(3500));
+          for _i in 0..100 {
+            wincan.fill_rect(screen)?;
+            wincan.present();
+          }
+          intro_played = true;
+        }
+
+        wincan.copy(&diff_texture, None, screen)?;
+        intro::draw_intro(wincan, difficulty_choice)?;
+
+        if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
+          if keypress_timer == 0.0 {
+            difficulty_choice = if difficulty_choice == 0 {
+              2
+            } else {
+              difficulty_choice - 1
+            }
+          } else {
+            continue;
+          };
+          keypress_timer += single_elapsed;
+          if keypress_timer >= KEYPRESS_DURATION {
+            keypress_timer = 0.0;
+          }
+        }
+        if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
+          if keypress_timer == 0.0 {
+            difficulty_choice = if difficulty_choice == 2 {
+              0
+            } else {
+              difficulty_choice + 1
+            }
+          } else {
+            continue;
+          };
+          keypress_timer += single_elapsed;
+          if keypress_timer >= KEYPRESS_DURATION {
+            keypress_timer = 0.0;
+          }
+        }
+        if keystate.contains(&Keycode::Return) {
+          if keypress_timer == 0.0 {
+            wincan.set_draw_color(Color::RGBA(0, 0, 0, 20));
+            for _i in 0..100 {
+              wincan.fill_rect(screen)?;
+              wincan.present();
+            }
+            loaded_map = Map::Overworld;
+          } else {
+            continue;
+          };
+        }
+      }
+
       Map::Overworld => {
         wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
         overworld::draw_overworld(wincan)?;
@@ -460,18 +526,14 @@ fn run(
             if keypress_timer == 0.0 {
               menu_choice = match menu_choice {
                 0 => {
-                  if player_team.len() > 4 {
-                    4
-                  } else if player_team.len() > 2 {
+                  if player_team.len() > 2 {
                     2
                   } else {
                     6
                   }
                 }
                 1 => {
-                  if player_team.len() == 6 {
-                    5
-                  } else if player_team.len() > 3 {
+                  if player_team.len() > 3 {
                     3
                   } else {
                     6
@@ -763,7 +825,6 @@ fn run(
             battle_state = monster::BattleState {
               player_turn: monsters_map[&player_monster].attack_stat
                 >= monsters_map[&enemy_monster].attack_stat,
-              
               player_team: battle_state.player_team.clone(),
               enemy_team: enemy_team.clone(),
               self_attack_stages: 0,
@@ -968,18 +1029,14 @@ fn run(
             if keypress_timer == 0.0 {
               menu_choice = match menu_choice {
                 0 => {
-                  if player_team.len() > 4 {
-                    4
-                  } else if player_team.len() > 2 {
+                  if player_team.len() > 2 {
                     2
                   } else {
                     6
                   }
                 }
                 1 => {
-                  if player_team.len() == 6 {
-                    5
-                  } else if player_team.len() > 3 {
+                  if player_team.len() > 3 {
                     3
                   } else {
                     6
@@ -1079,7 +1136,6 @@ fn run(
                   let f = format!("You switched in {}!", new_mon);
                   battle_draw.player_name = new_mon.clone();
                   battle_draw.player_health = switched_front.1;
-                  
                   battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
 
                   match battle::enemy_battle_turn(
