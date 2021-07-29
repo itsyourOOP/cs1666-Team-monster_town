@@ -400,8 +400,7 @@ pub fn player_battle_turn(
 
     // Check effectiveness, and message based upon it
     let effectiveness = monster::str_effectiveness(
-        d,
-        &monsters_map[&player_monster].moves[current_choice].attack_type,
+        &monsters_map[&player_monster].moves[current_choice],
         &monsters_map[&enemy_monster].monster_type,
     );
     match effectiveness {
@@ -479,8 +478,7 @@ pub fn enemy_battle_turn(
     
     // Check effectiveness, and message based upon it
     let effectiveness = monster::str_effectiveness(
-        d,
-        &monsters_map[&enemy_monster].moves[enemy_choice].attack_type,
+        &monsters_map[&enemy_monster].moves[enemy_choice],
         &monsters_map[&player_monster].monster_type,
     );
     match effectiveness {
