@@ -1266,7 +1266,6 @@ fn run(
                 }
               }
             }
-            battle_state.player_monster = &battle_draw.monsters[&battle_state.player_team[0].0.clone()];
           } else {
             continue;
           };
