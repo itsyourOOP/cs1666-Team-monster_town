@@ -12,6 +12,9 @@ use rand::{self, Rng};
 use crate::monster;
 
 pub enum Map {
+    Intro,
+    Hospital,
+    Home,
     Overworld,
     Battle,
     GymOne,
