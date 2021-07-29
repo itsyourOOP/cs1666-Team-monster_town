@@ -1,8 +1,5 @@
 extern crate rand;
 
-//use std::collections::HashMap;
-
-//use sdl2::event::Event;
 use sdl2::image::LoadTexture;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
@@ -19,11 +16,7 @@ const CAM_H: u32 = 720;
 pub fn draw_overworld(wincan: &mut sdl2::render::WindowCanvas) -> Result<(), String> {
   let texture_creator = wincan.texture_creator();
 
-  //Commented old town map. Remove later.
-  //let background_image = texture_creator.load_texture("images/MapHolder.png")?;
-
   // Texture
-
   let tree_sheet = texture_creator.load_texture("images/tree.png")?;
   let grass_sheet = texture_creator.load_texture("images/grass_patch_32.png")?;
   let water_sheet = texture_creator.load_texture("images/water_patch_32.png")?;
@@ -228,7 +221,25 @@ pub fn display_menu(wincan: &mut sdl2::render::WindowCanvas, player_x: i32, play
 
     Ok(())
   }
-    
+
+  pub fn draw_hospital(wincan: &mut WindowCanvas)->Result<(), String>{
+    let hospital_screen = Rect::new((0) as i32, (0) as i32, (1280) as u32, (720) as u32);
+    let _texture_creator = wincan.texture_creator();
+    wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
+    wincan.fill_rect(hospital_screen).unwrap();
+
+     Ok(())
+  }
+
+  pub fn draw_home(wincan: &mut WindowCanvas)->Result<(), String>{
+    let home_screen = Rect::new((0) as i32, (0) as i32, (1280) as u32, (720) as u32);
+    let _texture_creator = wincan.texture_creator();
+    wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
+    wincan.fill_rect(home_screen).unwrap();
+
+    Ok(())
+  }
+
 pub fn mark_rectangles() -> Vec<Rect>{
   let mut spn_rectangles = Vec::new();
   // Top left corner of the grass patches
