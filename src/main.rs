@@ -223,6 +223,7 @@ fn run(
   let mut battle_state = monster::BattleState {
     player_turn: monsters_map[&player_monster].attack_stat
       >= monsters_map[&enemy_monster].attack_stat,
+    
     player_team: player_team.clone(),
     enemy_team: enemy_team.clone(),
     self_attack_stages: 0,
@@ -280,7 +281,7 @@ fn run(
   let mut gym_one_maze = maze::Maze::create_random_maze(16, 9);
   let mut gym_two_maze = maze::Maze::create_random_maze(9, 6);
   let mut gym_three_maze = maze::Maze::create_random_maze(20, 16);
-  let mut gym_four_maze = maze::Maze::create_random_maze(5, 5);
+  let mut gym_four_maze = maze::Maze::create_random_maze(15, 15);
 
   //battle::draw_monster_menu(wincan, &battle_draw, 3)?;
   //thread::sleep(Duration::from_millis(5000));
@@ -716,9 +717,25 @@ fn run(
           }
         
           if check_collision(&player_box, &front_of_hospital_box)
-          || check_collision(&player_box, &front_of_home_box)
           {
             overworld::display_building_menu(wincan)?;
+            if keystate.contains(&Keycode::Y)
+            {
+              loaded_map = Map::Hospital;
+              player_box.set_x(1200);
+              player_box.set_y(7);
+            }
+          }
+          
+          if check_collision(&player_box, &front_of_home_box)
+          {
+            overworld::display_building_menu(wincan)?;
+            if keystate.contains(&Keycode::Y)
+            {
+              loaded_map = Map::Home;
+              player_box.set_x(1200);
+              player_box.set_y(7);
+            }
           }
 
         for i in &spawnable_areas {
@@ -746,6 +763,7 @@ fn run(
             battle_state = monster::BattleState {
               player_turn: monsters_map[&player_monster].attack_stat
                 >= monsters_map[&enemy_monster].attack_stat,
+              
               player_team: battle_state.player_team.clone(),
               enemy_team: enemy_team.clone(),
               self_attack_stages: 0,
@@ -1061,6 +1079,7 @@ fn run(
                   let f = format!("You switched in {}!", new_mon);
                   battle_draw.player_name = new_mon.clone();
                   battle_draw.player_health = switched_front.1;
+                  
                   battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
 
                   match battle::enemy_battle_turn(
@@ -1247,6 +1266,7 @@ fn run(
                 }
               }
             }
+            battle_state.player_monster = &battle_draw.monsters[&battle_state.player_team[0].0.clone()];
           } else {
             continue;
           };
@@ -1272,10 +1292,17 @@ fn run(
         .filter_map(Keycode::from_scancode)
         .collect();
 
-         // wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
-          //overworld::draw_overworld(wincan)?;
+          let mut collision = gym::draw_gym(wincan, gym_one_maze.clone());
           
-          gym::draw_gym(wincan, gym_one_maze.clone())?;
+          for member in collision.iter_mut() {
+
+            if check_collision(&player_box, &member)
+            {
+              player_box.set_x(player_box.x() - x_vel);
+              player_box.set_y(player_box.y() - y_vel);
+            }
+  
+          }
          
           let exit_box = Rect::new(1240,0,100,50);
           if check_collision(&player_box, &exit_box)
@@ -1342,11 +1369,18 @@ fn run(
         .pressed_scancodes()
         .filter_map(Keycode::from_scancode)
         .collect();
-    
-         // wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
-          //overworld::draw_overworld(wincan)?;
+
+          let mut collision = gym::draw_gym_two(wincan, gym_two_maze.clone());
           
-          gym::draw_gym(wincan, gym_two_maze.clone())?;
+          for member in collision.iter_mut() {
+
+            if check_collision(&player_box, &member)
+            {
+              player_box.set_x(player_box.x() - x_vel);
+              player_box.set_y(player_box.y() - y_vel);
+            }
+  
+          }
           
           let exit_box = Rect::new(1240,0,100,50);
           if check_collision(&player_box, &exit_box)
@@ -1414,12 +1448,18 @@ fn run(
         .filter_map(Keycode::from_scancode)
         .collect();
 
-  
-         // wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
-          //overworld::draw_overworld(wincan)?;
+          let mut collision = gym::draw_gym_three(wincan, gym_three_maze.clone());
           
-          gym::draw_gym(wincan, gym_three_maze.clone())?;
-         
+          for member in collision.iter_mut() {
+
+            if check_collision(&player_box, &member)
+            {
+              player_box.set_x(player_box.x() - x_vel);
+              player_box.set_y(player_box.y() - y_vel);
+            }
+  
+          }
+          
           let exit_box = Rect::new(1240,0,100,50);
           if check_collision(&player_box, &exit_box)
             {
@@ -1487,11 +1527,18 @@ fn run(
         .filter_map(Keycode::from_scancode)
         .collect();
 
-         // wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
-          //overworld::draw_overworld(wincan)?;
+          let mut collision = gym::draw_gym_four(wincan, gym_four_maze.clone());
           
-          gym::draw_gym(wincan, gym_four_maze.clone())?;
-          
+          for member in collision.iter_mut() {
+
+            if check_collision(&player_box, &member)
+            {
+              player_box.set_x(player_box.x() - x_vel);
+              player_box.set_y(player_box.y() - y_vel);
+            }
+  
+          }
+
           let exit_box = Rect::new(1240,0,100,50);
           if check_collision(&player_box, &exit_box)
             {
@@ -1501,7 +1548,7 @@ fn run(
                 player_box.set_x(380);
                 player_box.set_y(600);
                 loaded_map = Map::Overworld;
-                gym_four_maze = maze::Maze::create_random_maze(5, 5);
+                gym_four_maze = maze::Maze::create_random_maze(15, 15);
               }
              
             }
@@ -1541,14 +1588,130 @@ fn run(
           if keystate.contains(&Keycode::L)
           {
             
-              gym_four_maze = maze::Maze::create_random_maze(5, 5);
+              gym_four_maze = maze::Maze::create_random_maze(15, 15);
           }
           if keystate.contains(&Keycode::R)
           {
             loaded_map = Map::Overworld;
           }
         
-      }
+      },
+
+      Map::Hospital => {
+          
+        let keystate: HashSet<Keycode> = event_pump
+        .keyboard_state()
+        .pressed_scancodes()
+        .filter_map(Keycode::from_scancode)
+        .collect();
+
+          overworld::draw_hospital(wincan)?;
+          
+          let exit_box = Rect::new(500,650,100,50);
+          if check_collision(&player_box, &exit_box)
+            {
+              gym::display_exit_gym_menu(wincan)?;
+              if keystate.contains(&Keycode::E)
+              {
+                player_box.set_x(125);
+                player_box.set_y(610);
+                loaded_map = Map::Overworld;
+              }
+             
+            }
+            
+          let mut x_deltav = 0;
+          let mut y_deltav = 0;
+          if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
+            y_deltav -= ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
+            x_deltav -= ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
+            y_deltav += ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
+            x_deltav += ACCEL_RATE;
+          }
+  
+          //Utilize the resist function: slowing it down
+          x_deltav = resist(x_vel, x_deltav);
+          y_deltav = resist(y_vel, y_deltav);
+  
+          // not exceed speed limit
+          x_vel = (x_vel + x_deltav).clamp(-MAX_SPEED, MAX_SPEED);
+          y_vel = (y_vel + y_deltav).clamp(-MAX_SPEED, MAX_SPEED);
+  
+          // Try to move horizontally
+          player_box.set_x(player_box.x() + x_vel);
+  
+          // Try to move vertically
+          player_box.set_y(player_box.y() + y_vel);
+          
+          wincan.copy(player.texture(), None, player_box)?;
+    
+          wincan.present();        
+      },
+
+      Map::Home => {
+          
+        let keystate: HashSet<Keycode> = event_pump
+        .keyboard_state()
+        .pressed_scancodes()
+        .filter_map(Keycode::from_scancode)
+        .collect();
+
+          overworld::draw_home(wincan)?;
+
+          let exit_box = Rect::new(500,650,100,50);
+          if check_collision(&player_box, &exit_box)
+            {
+              gym::display_exit_gym_menu(wincan)?;
+              if keystate.contains(&Keycode::E)
+              {
+                player_box.set_x(760);
+                player_box.set_y(400);
+                loaded_map = Map::Overworld;
+              }
+             
+            }
+          let mut x_deltav = 0;
+          let mut y_deltav = 0;
+          if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
+            y_deltav -= ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::A) || keystate.contains(&Keycode::Left) {
+            x_deltav -= ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::S) || keystate.contains(&Keycode::Down) {
+            y_deltav += ACCEL_RATE;
+          }
+          if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
+            x_deltav += ACCEL_RATE;
+          }
+  
+          //Utilize the resist function: slowing it down
+          x_deltav = resist(x_vel, x_deltav);
+          y_deltav = resist(y_vel, y_deltav);
+  
+          // not exceed speed limit
+          x_vel = (x_vel + x_deltav).clamp(-MAX_SPEED, MAX_SPEED);
+          y_vel = (y_vel + y_deltav).clamp(-MAX_SPEED, MAX_SPEED);
+  
+          // Try to move horizontally
+          player_box.set_x(player_box.x() + x_vel);
+  
+          // Try to move vertically
+          player_box.set_y(player_box.y() + y_vel);
+  
+          wincan.copy(player.texture(), None, player_box)?;
+    
+          wincan.present();
+        
+      },
+
+    
     }
   }
 
