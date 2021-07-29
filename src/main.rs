@@ -341,7 +341,6 @@ fn run(
             wincan.fill_rect(screen)?;
             wincan.present();
           }
-          //thread::sleep(Duration::from_millis(500));
           intro_played = true;
         }
 
@@ -527,18 +526,14 @@ fn run(
             if keypress_timer == 0.0 {
               menu_choice = match menu_choice {
                 0 => {
-                  if player_team.len() > 4 {
-                    4
-                  } else if player_team.len() > 2 {
+                  if player_team.len() > 2 {
                     2
                   } else {
                     6
                   }
                 }
                 1 => {
-                  if player_team.len() == 6 {
-                    5
-                  } else if player_team.len() > 3 {
+                  if player_team.len() > 3 {
                     3
                   } else {
                     6
@@ -1034,18 +1029,14 @@ fn run(
             if keypress_timer == 0.0 {
               menu_choice = match menu_choice {
                 0 => {
-                  if player_team.len() > 4 {
-                    4
-                  } else if player_team.len() > 2 {
+                  if player_team.len() > 2 {
                     2
                   } else {
                     6
                   }
                 }
                 1 => {
-                  if player_team.len() == 6 {
-                    5
-                  } else if player_team.len() > 3 {
+                  if player_team.len() > 3 {
                     3
                   } else {
                     6
