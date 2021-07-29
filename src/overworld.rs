@@ -4,10 +4,8 @@ extern crate rand;
 
 //use sdl2::event::Event;
 use sdl2::image::LoadTexture;
-use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
-use std::collections::HashSet;
 use sdl2::render::WindowCanvas;
 
 
@@ -221,12 +219,12 @@ pub fn display_menu(wincan: &mut sdl2::render::WindowCanvas, player_x: i32, play
 }
 
 
-  pub fn display_building_menu(wincan: &mut WindowCanvas, keystate:HashSet<Keycode> , player_x: i32, player_y: i32) -> Result<(), String> {
+  pub fn display_building_menu(wincan: &mut WindowCanvas) -> Result<(), String> {
     let texture_creator = wincan.texture_creator();
     let display_gym_box = texture_creator.load_texture("images/enterbuilding.png").unwrap();
   
     let display_box = Rect::new(500, 200, 200 ,200);
-    wincan.copy(&display_gym_box, None, display_box);
+    wincan.copy(&display_gym_box, None, display_box)?;
 
     Ok(())
   }
