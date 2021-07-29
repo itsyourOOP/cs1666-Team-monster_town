@@ -85,8 +85,6 @@ pub fn draw_gym(wincan: &mut WindowCanvas, maze:Maze) ->Result<(), String>{
     y2+=44;
   }
 
-
-  wincan.present();
   Ok(())
 
 }
