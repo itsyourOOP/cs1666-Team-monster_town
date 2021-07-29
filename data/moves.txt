@@ -5,9 +5,22 @@ Wing Flap,50,0,0,0,0,Flying,Flap wings and send out a tornado
 Seed Pistol,30,0,0,0,0,Grass,Shoot melon seeds at their eyes
 Electric Shock,45,0,0,0,0,Electric,Send out electric waves 
 Tail Attack,30,0,0,0,0,Normal,Swing tails to attack
-Water Waves,40,0,0,0,0,Water,Shoot water streams with high energy
+Water Waves,30,0,0,0,0,Water,Shoot water streams with high energy
 Indecision,0,0,0,0,0,Normal,Do nothing
 Water Wrath,60,0,0,0,0,Water,Water overwhelms the enemy
 Soar,0,0,1,0,0,Flying,Flies up to reduce damage
 Windy Wind-up,0,1,0,0,0,Flying,Increases wind to boost attacks
 Headbutt,20,0,0,0,0,Normal,Headbutts enemy
+Match Strike,25,0,0,0,0,Fire,Fling a small flame
+Flaming Fervor,40,0,0,0,0,Fire,Consumes the area with fire
+Storm Summoner,0,2,0,0,0,Electric,Summons a powerful storm
+Charge Conductor,25,1,0,0,0,Electric,Raises current and attacks
+Heat Haze,0,0,0,-1,-1,Fire,Inhibit enemy's vision
+Germinate,0,1,1,0,0,Grass,Grows and raises stats
+Tough Turf,0,0,0,0,-1,Grass,Makes enemy easier to attack
+Seismic Soil,0,0,0,-1,-2,Ground,Shifts ground around enemy
+Tremor,25,0,0,0,0,Ground,Weak movement of ground
+Landslide,35,0,0,0,0,Ground,Attacks with the surronding landmass
+Tail Tangle,40,0,0,-1,0,Normal,Uses its tails to strangle the enemy
+Jaw Jab,30,0,0,0,-1,Normal,Bites the enemy
+Plant Punch,15,0,0,0,0,Grass,Punch with plants

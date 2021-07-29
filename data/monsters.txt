@@ -1,8 +1,14 @@
 monster_name, attack_stat, defence_stat, monster_type
-Reusoon,95,55,Normal,Tail Attack,Stare Down,Battle Cry,Indecision
-Chromacat,65,85,Normal,Wing Flap,Seed Pistol,Stare Down,Battle Cry
-melon-mon,75,60,Grass,Seed Pistol,Indecision,Indecision,Indecision
+Reusoon,95,55,Normal,Tail Attack,Jaw Jab,Stare Down,Battle Cry
+Chromacat,65,85,Normal,Tail Tangle,Tail Attack,Headbutt,Stare Down
+orcaaa,95,120,Water,Water Wrath,Water Waves,Headbutt,Battle Cry
+taterface,120,12,Grass,Seed Pistol,Headbutt,Stare Down,Tough Turf
+Gurmail,110,50,Grass,Plant Punch,Tail Attack,Germinate,Tough Turf
+melon-mon,75,60,Grass,Seed Pistol,Headbutt,Germinate,Tough Turf
+tokoro,75,80,Ground,Landslide,Tremor,Seismic Soil,Battle Cry
+BeakFlame,120,50,Fire,Match Strike,Headbutt,Heat Haze,Stare Down
+Burhan,120,40,Fire,Flaming Fervor,Match Strike,Stare Down,Battle Cry
+Shockshroom,100,65,Electric,Electric Shock,Headbutt,Germinate,Stare Down
+Burhan2,80,100,Electric,Electric Shock,Charge Conductor,Headbutt,Stare Down
+Zhiyi,90,80,Electric,Electric Shock,Charge Conductor,Storm Summoner,Battle Cry
 deer pokemon,85,75,Flying,Wing Flap,Windy Wind-up,Stare Down,Soar
-orcaaa,95,120,Water,Water Wrath,Water Waves,Battle Cry,Indecision
-Shockshroom,100,65,Electric,Electric Shock,Indecision,Stare Down,Headbutt
-taterface,120,12,Grass,Seed Pistol,Tail Attack,Indecision,Indecision
