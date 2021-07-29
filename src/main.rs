@@ -7,6 +7,7 @@ pub mod overworld;
 pub mod player;
 pub mod gym;
 pub mod maze;
+pub mod ai;
 
 use battle::Map;
 
@@ -222,8 +223,6 @@ fn run(
   let mut battle_state = monster::BattleState {
     player_turn: monsters_map[&player_monster].attack_stat
       >= monsters_map[&enemy_monster].attack_stat,
-    player_monster: &monsters_map[&player_monster],
-    opp_monster: &monsters_map[&enemy_monster],
     player_team: player_team.clone(),
     enemy_team: enemy_team.clone(),
     self_attack_stages: 0,
@@ -250,7 +249,7 @@ fn run(
   let mut flip_3 = false;
 
   // Tracking time
-  let mut time_count = Instant::now();
+  let time_count = Instant::now();
   let mut keypress_timer: f64 = 0.0;
   let mut timer = Instant::now();
 
@@ -674,7 +673,7 @@ fn run(
 
         if check_collision(&player_box, &front_of_gym_1_box)
           {
-            gym::display_gym_menu(wincan, player_box.x(), player_box.y())?;
+            gym::display_gym_menu(wincan)?;
             if keystate.contains(&Keycode::Y)
             {
               loaded_map = Map::GymOne;
@@ -684,7 +683,7 @@ fn run(
           }
           if check_collision(&player_box, &front_of_gym_2_box)
           {
-            gym::display_gym_menu(wincan, player_box.x(), player_box.y())?;
+            gym::display_gym_menu(wincan)?;
             if keystate.contains(&Keycode::Y)
             {
               loaded_map = Map::GymTwo;
@@ -695,7 +694,7 @@ fn run(
           }
           if check_collision(&player_box, &front_of_gym_3_box)
           {
-            gym::display_gym_menu(wincan, player_box.x(), player_box.y())?;
+            gym::display_gym_menu(wincan)?;
             if keystate.contains(&Keycode::Y)
             {
               loaded_map = Map::GymThree;
@@ -706,7 +705,7 @@ fn run(
           }
           if check_collision(&player_box, &front_of_gym_4_box)
           {
-            gym::display_gym_menu(wincan, player_box.x(), player_box.y())?;
+            gym::display_gym_menu(wincan)?;
             if keystate.contains(&Keycode::Y)
             {
               loaded_map = Map::GymFour;
@@ -719,7 +718,7 @@ fn run(
           if check_collision(&player_box, &front_of_hospital_box)
           || check_collision(&player_box, &front_of_home_box)
           {
-            overworld::display_building_menu(wincan, keystate.clone(), player_box.x(), player_box.y())?;
+            overworld::display_building_menu(wincan)?;
           }
 
         for i in &spawnable_areas {
@@ -747,8 +746,6 @@ fn run(
             battle_state = monster::BattleState {
               player_turn: monsters_map[&player_monster].attack_stat
                 >= monsters_map[&enemy_monster].attack_stat,
-              player_monster: &monsters_map[&player_monster],
-              opp_monster: &monsters_map[&enemy_monster],
               player_team: battle_state.player_team.clone(),
               enemy_team: enemy_team.clone(),
               self_attack_stages: 0,
@@ -791,9 +788,7 @@ fn run(
             battle_draw.player_name = player_monster.clone();
 
             battle_state = monster::BattleState {
-              player_turn: battle::turn_calc(&battle_state),
-              player_monster: &monsters_map[&player_monster],
-              opp_monster: &monsters_map[&enemy_monster],
+              player_turn: battle::turn_calc(&monsters_map, &battle_state),
               player_team: battle_state.player_team.clone(),
               enemy_team: enemy_team.clone(),
               self_attack_stages: 0,
@@ -1066,8 +1061,6 @@ fn run(
                   let f = format!("You switched in {}!", new_mon);
                   battle_draw.player_name = new_mon.clone();
                   battle_draw.player_health = switched_front.1;
-                  battle_state.player_monster = &monsters_map[&battle_state.player_team[0].0];
-                  battle_state.opp_monster = &monsters_map[&battle_state.enemy_team[0].0];
                   battle::draw_battle(wincan, &battle_draw, None, Some(f))?;
 
                   match battle::enemy_battle_turn(
@@ -1184,9 +1177,7 @@ fn run(
         }
         if keystate.contains(&Keycode::Return) {
           if keypress_timer == 0.0 {
-            battle_state.player_monster = &monsters_map[&battle_state.player_team[0].0];
-            battle_state.opp_monster = &monsters_map[&battle_state.enemy_team[0].0];
-            battle_state.player_turn = battle::turn_calc(&battle_state);
+            battle_state.player_turn = battle::turn_calc(&monsters_map, &battle_state);
             // Battle Logic
             if battle_state.player_turn {
               match battle::player_battle_turn(
@@ -1256,7 +1247,6 @@ fn run(
                 }
               }
             }
-            battle_state.player_monster = &battle_draw.monsters[&battle_state.player_team[0].0.clone()];
           } else {
             continue;
           };
@@ -1285,12 +1275,12 @@ fn run(
          // wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
           //overworld::draw_overworld(wincan)?;
           
-          gym::draw_gym(wincan,keystate.clone(), gym_one_maze.clone())?;
+          gym::draw_gym(wincan, gym_one_maze.clone())?;
          
           let exit_box = Rect::new(1240,0,100,50);
           if check_collision(&player_box, &exit_box)
             {
-              gym::display_exit_gym_menu(wincan, player_box.x(), player_box.y())?;
+              gym::display_exit_gym_menu(wincan)?;
               if keystate.contains(&Keycode::E)
               {
   
@@ -1356,12 +1346,12 @@ fn run(
          // wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
           //overworld::draw_overworld(wincan)?;
           
-          gym::draw_gym(wincan,keystate.clone(), gym_two_maze.clone())?;
+          gym::draw_gym(wincan, gym_two_maze.clone())?;
           
           let exit_box = Rect::new(1240,0,100,50);
           if check_collision(&player_box, &exit_box)
             {
-              gym::display_exit_gym_menu(wincan, player_box.x(), player_box.y())?;
+              gym::display_exit_gym_menu(wincan)?;
               if keystate.contains(&Keycode::E)
               {
                 player_box.set_x(1190);
@@ -1428,12 +1418,12 @@ fn run(
          // wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
           //overworld::draw_overworld(wincan)?;
           
-          gym::draw_gym(wincan,keystate.clone(), gym_three_maze.clone())?;
+          gym::draw_gym(wincan, gym_three_maze.clone())?;
          
           let exit_box = Rect::new(1240,0,100,50);
           if check_collision(&player_box, &exit_box)
             {
-              gym::display_exit_gym_menu(wincan, player_box.x(), player_box.y())?;
+              gym::display_exit_gym_menu(wincan)?;
               if keystate.contains(&Keycode::E)
               {
                 player_box.set_x(880);
@@ -1500,12 +1490,12 @@ fn run(
          // wincan.set_draw_color(Color::RGBA(0, 128, 128, 255));
           //overworld::draw_overworld(wincan)?;
           
-          gym::draw_gym(wincan,keystate.clone(), gym_four_maze.clone())?;
+          gym::draw_gym(wincan, gym_four_maze.clone())?;
           
           let exit_box = Rect::new(1240,0,100,50);
           if check_collision(&player_box, &exit_box)
             {
-              gym::display_exit_gym_menu(wincan, player_box.x(), player_box.y())?;
+              gym::display_exit_gym_menu(wincan)?;
               if keystate.contains(&Keycode::E)
               {
                 player_box.set_x(380);
