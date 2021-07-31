@@ -1675,6 +1675,10 @@ fn run(
              
             }
             
+
+          let npc_static_box1 = Rect::new(490,230,32,32);
+          wincan.copy(&npc_static, None, npc_static_box1)?;
+
           let mut x_deltav = 0;
           let mut y_deltav = 0;
           if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
@@ -1689,11 +1693,11 @@ fn run(
           if keystate.contains(&Keycode::D) || keystate.contains(&Keycode::Right) {
             x_deltav += ACCEL_RATE;
           }
-  
+      
           //Utilize the resist function: slowing it down
           x_deltav = resist(x_vel, x_deltav);
           y_deltav = resist(y_vel, y_deltav);
-  
+    
           // not exceed speed limit
           x_vel = (x_vel + x_deltav).clamp(-MAX_SPEED, MAX_SPEED);
           y_vel = (y_vel + y_deltav).clamp(-MAX_SPEED, MAX_SPEED);

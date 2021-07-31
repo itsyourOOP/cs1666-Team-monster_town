@@ -1,3 +1,5 @@
 Cargo.lock
 target/
 images/Thumbs.db
+*.sublime-project
+*.sublime-workspace
