@@ -1676,9 +1676,6 @@ fn run(
             }
             
 
-          let npc_static_box1 = Rect::new(490,230,32,32);
-          wincan.copy(&npc_static, None, npc_static_box1)?;
-
           let mut x_deltav = 0;
           let mut y_deltav = 0;
           if keystate.contains(&Keycode::W) || keystate.contains(&Keycode::Up) {
