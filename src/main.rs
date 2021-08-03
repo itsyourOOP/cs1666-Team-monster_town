@@ -23,6 +23,9 @@ use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::BlendMode;
 
+
+use std::collections::HashMap;
+
 use std::time::{Instant};
 use std::collections::HashSet;
 use std::path::Path;
@@ -52,6 +55,25 @@ const DELTA_TIME: f64 = 1.0/60.0;
 //const BUFFER_FRAMES: u32 = 10;
 // supposed keypress duration
 const KEYPRESS_DURATION: f64 = 1.0; 
+
+pub struct ActiveMons {
+  name: String,
+  hp: f32,
+}
+
+impl Clone for ActiveMons{
+
+  fn clone(&self) -> Self 
+  { 
+    let e =  ActiveMons{
+      name: self.name,
+      hp: self.hp
+    };
+
+    return e;
+  }
+
+}
 
 fn resist(vel: i32, deltav: i32) -> i32 {
   if deltav == 0 {
@@ -196,13 +218,37 @@ fn run(
   let names_tup = battle::create_all_name_tuples(&texture_creator, &font, &all_monsters)?;
   let monster_textures = battle::create_all_monster_textures(&texture_creator, &all_monsters)?;
 
-  let mut player_team: Vec<(String, f32)> = Vec::new();
-  player_team.push((String::from("Chromacat"), 100.0));
-  player_team.push((String::from("deer pokemon"), 100.0));
-  player_team.push((String::from("tokoro"), 100.0));
-  player_team.push((String::from("Shockshroom"), 100.0));
-  player_team.push((String::from("Gurmail"), 100.0));
-  player_team.push((String::from("Burhan2"), 100.0));
+  let mut player_team: Vec<ActiveMons> = Vec::new();
+  player_team.push(ActiveMons{ name: String::from("Chromacat"), hp: 100.0});
+  player_team.push(ActiveMons{ name: String::from("deer pokemon"), hp: 100.0});
+  player_team.push(ActiveMons{ name: String::from("tokoro"), hp: 100.0});
+  player_team.push(ActiveMons{ name: String::from("Shockshroom"), hp: 100.0});
+  player_team.push(ActiveMons{ name: String::from("Gurmail"), hp: 100.0});
+  player_team.push(ActiveMons{ name: String::from("Burhan2"), hp: 100.0}) ;
+
+/*  let mut player_team: HashMap<String, f32> = HashMap::new(); 
+  player_team.insert(String::from("Chromacat"), 100.0);
+  player_team.insert(String::from("deer pokemon"), 100.0);
+  player_team.insert(String::from("tokoro"), 100.0);
+  player_team.insert(String::from("Shockshroom"), 100.0);
+  player_team.insert(String::from("Gurmail"), 100.0);
+  player_team.insert(String::from("Burhan2"), 100.0);
+
+  let d = player_team.get_key_value("Chromacat").unwrap().0.to_string(); 
+  let d_f = player_team.get_key_value("Chromacat").unwrap().1.to_string();
+
+  println!("{:?} is String, {:?} is Float", d, d_f);*/
+
+  let mut player_team_exp: HashMap<String, f32> = HashMap::new(); 
+
+  for f in &player_team{
+    player_team_exp.insert((*f.name).to_string(), 0.0); 
+  }
+
+  let e = player_team_exp.get_key_value("Chromacat").unwrap().0.to_string(); 
+  let e_f = player_team_exp.get_key_value("Chromacat").unwrap().1.to_string(); 
+
+  println!("{:?} is String, {:?} is Float", e, e_f);
 
   let mut enemy_team: Vec<(String, f32)> = Vec::new();
   enemy_team.push((String::from("melon-mon"), 100.0));

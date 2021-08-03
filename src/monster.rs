@@ -1,3 +1,4 @@
+use crate::ActiveMons;
 use std::collections::HashMap;
 
 use std::fs::File;
@@ -26,7 +27,7 @@ pub struct Move {
 
 pub struct BattleState {
     pub player_turn: bool,
-    pub player_team:  Vec<(String, f32)>,
+    pub player_team:  Vec<ActiveMons>,
     pub enemy_team: Vec<(String, f32)>,
     pub self_attack_stages: i32,
     pub self_defense_stages: i32,
@@ -158,11 +159,11 @@ fn damage_calc(damage: f32, a: f32, d: f32, stab: f32, typb: f32) -> f32 {
 
 pub fn calculate_damage(monsters: &HashMap<String, Monster>, battle_state: &mut BattleState, move_index: usize, player_turn: bool) -> f32 {
     if player_turn {
-        let attack = monsters[&battle_state.player_team[0].0].moves[move_index];
+        let attack = monsters[&battle_state.player_team[0].name].moves[move_index];
         calculate_player_attack(
             battle_state,
             attack,
-            &monsters[&battle_state.player_team[0].0],
+            &monsters[&battle_state.player_team[0].name],
             &monsters[&battle_state.enemy_team[0].0],
         )
     } else {
@@ -171,7 +172,7 @@ pub fn calculate_damage(monsters: &HashMap<String, Monster>, battle_state: &mut 
             battle_state,
             attack,
             &monsters[&battle_state.enemy_team[0].0],
-            &monsters[&battle_state.player_team[0].0],
+            &monsters[&battle_state.player_team[0].name],
         )
     }
 }

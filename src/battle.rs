@@ -765,5 +765,5 @@ pub fn verify_team(v: &Vec<(String, f32)>) -> Vec<(String, f32)>{
 }
 
 pub fn turn_calc<'a>(monsters: &HashMap<String, monster::Monster>, battle_state: &monster::BattleState) -> bool {
-    return monsters[&battle_state.player_team[0].0].attack_stat >= monsters[&battle_state.enemy_team[0].0].attack_stat;
+    return monsters[&battle_state.player_team[0].name].attack_stat >= monsters[&battle_state.enemy_team[0].0].attack_stat;
 }
